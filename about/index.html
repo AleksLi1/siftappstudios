@@ -20,8 +20,8 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..500;1,6..72,300..400&display=swap">
 <script>
-// Scripts run: the figures can be drawn. The painting is engraved live only
-// with WebGL and when motion is welcome; otherwise it stays the photograph.
+// Scripts run: the figures can be drawn. The painting comes alive only with
+// WebGL and when motion is welcome; otherwise it stays the photograph.
 (function () {
   var d = document.documentElement;
   d.classList.add('js');
@@ -153,7 +153,7 @@ h1 {
   display: block;
 }
 .frame img { object-fit: cover; }
-.frame canvas { opacity: 0; transition: opacity 0.6s ease; touch-action: pan-y; cursor: crosshair; }
+.frame canvas { opacity: 0; transition: opacity 0.6s ease; touch-action: pan-y; }
 html.plate-ready .frame canvas { opacity: 1; }
 html.plate-ready .frame { background: var(--ground); }
 .plate figcaption, .artefact figcaption {
@@ -163,6 +163,11 @@ html.plate-ready .frame { background: var(--ground); }
   line-height: 1.5;
   text-wrap: pretty;
 }
+
+/* As the view moves through the painting, the caption says what is in it. */
+.cap { display: grid; }
+.cap > span { grid-area: 1 / 1; transition: opacity 0.6s ease; }
+.cap > span:not(.on) { opacity: 0; }
 
 /* ------------------------------------------------------------- artefacts */
 .artefact { margin: 2.6rem 0 2.8rem; }
@@ -249,7 +254,13 @@ footer p { margin: 0; }
            alt="A small fishing boat heels over on a breaking wave in a storm. Its crew haul at the torn sail and cling to the rigging; light breaks through the clouds on the left.">
       <canvas aria-hidden="true"></canvas>
     </div>
-    <figcaption><i>The Storm on the Sea of Galilee</i>, Rembrandt, 1633. Stolen from the Isabella Stewart Gardner Museum in Boston in 1990, and never recovered.</figcaption>
+    <figcaption class="cap">
+      <span class="on"><i>The Storm on the Sea of Galilee</i>, Rembrandt, 1633. Stolen from the Isabella Stewart Gardner Museum in Boston in 1990, and never recovered.</span>
+      <span hidden>A wave breaks over the bow and tears the sail.</span>
+      <span hidden>The man holding his cap and gripping a rope looks straight out of the picture. He is taken to be Rembrandt himself.</span>
+      <span hidden>Christ sits on the right, in the shadow. In the gospel story the disciples wake him, and he calms the storm.</span>
+      <span hidden>Rembrandt&rsquo;s only known seascape. Its empty frame still hangs in the Dutch Room of the Gardner Museum.</span>
+    </figcaption>
   </figure>
 
   <article class="text">
@@ -479,18 +490,43 @@ footer p { margin: 0; }
 </script>
 
 <script type="module">
-// The painting as an engraving. Lines run across the plate and swell with the
-// dark (or, at night, with the light); they bend with the tone like the lines
-// on a banknote, and the sea under them keeps moving. A lamp shows the oil
-// paint beneath: it wanders over the boat, or follows the pointer.
+// The painting, alive. It opens as an engraving and the colour comes in from
+// the light. Then the sea, the foam and the clouds run along hand-drawn flow
+// lines while the boat, its crew and its rigging hold still, the boat pitches
+// on the swell and spray comes off the wave. On wide screens the view follows
+// the reading: each paragraph brings a part of the picture close, and by the
+// last one the storm has eased.
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js';
 
 const root = document.documentElement;
 if (root.classList.contains('live')) {
-  engrave().catch((err) => { console.error(err); root.classList.remove('plate-ready'); });
+  live().catch((err) => { console.error(err); root.classList.remove('plate-ready'); });
 }
 
-async function engrave() {
+// Places in the painting, in pixels of a 900-wide copy (y down), as texture uv.
+const PX = (x, y) => [x / 900, 1 - y / 1119];
+
+// What the view comes to as each part of the text reaches the reading line
+// (the first is the view at the top of the page).
+const STOPS = [
+  { el: 'h1', at: [450, 560], z: 1.035, cap: 0, storm: 1 },
+  { el: '.text > p:nth-of-type(1)', at: [272, 640], z: 2.1, cap: 1, storm: 1 },
+  { el: '.text > p:nth-of-type(2)', at: [446, 812], z: 3.3, cap: 2, storm: 1 },
+  { el: '.tri', at: [470, 690], z: 1.45, cap: -1, storm: 1 },
+  { el: '.text > p:nth-of-type(3)', at: [594, 816], z: 3.1, cap: 3, storm: 1 },
+  { el: '.quincunx', at: [470, 640], z: 1.25, cap: -1, storm: 0.6 },
+  { el: '.text > p:nth-of-type(4)', at: [450, 560], z: 1.035, cap: 4, storm: 0.28 },
+];
+
+// Where spray leaves the water: the crest at the bow, the lip of the wave in
+// front, the wave at the stern. Speeds in painting pixels a second.
+const SPRAY = [
+  { a: [150, 705], b: [228, 572], w: 0.45, vx: [10, 70], vy: [-150, -70] },
+  { a: [40, 850], b: [235, 830], w: 0.4, vx: [30, 110], vy: [-110, -40] },
+  { a: [790, 860], b: [895, 845], w: 0.15, vx: [-60, -10], vy: [-80, -30] },
+];
+
+async function live() {
   const frame = document.querySelector('.frame');
   const canvas = frame.querySelector('canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -498,22 +534,37 @@ async function engrave() {
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-  const tex = await new THREE.TextureLoader().loadAsync('storm-1600.jpg');
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  const loader = new THREE.TextureLoader();
+  const [paint, flow, mask] = await Promise.all(
+    ['storm-1600.jpg', 'storm-flow.png', 'storm-mask.png'].map((f) => loader.loadAsync(f)));
+  const aniso = renderer.capabilities.getMaxAnisotropy();
+  const asPaint = (t) => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = aniso;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    return t;
+  };
+  asPaint(paint);
+  for (const t of [flow, mask]) {
+    t.colorSpace = THREE.NoColorSpace;
+    t.minFilter = THREE.LinearFilter;
+    t.generateMipmaps = false;
+  }
 
   const u = {
-    uTex: { value: tex },
+    uPaint: { value: paint },
+    uFlow: { value: flow },
+    uMask: { value: mask },
     uSize: { value: new THREE.Vector2(1, 1) },
     uTime: { value: 0 },
+    uStorm: { value: 1 },
+    uCam: { value: new THREE.Vector3(0.5, 0.5, 1.035) },
+    uTilt: { value: new THREE.Vector2(0, 0) },
+    uDolly: { value: 0 },
+    uRock: { value: new THREE.Vector3(0, 0, 0) },
     uReveal: { value: 0 },
-    uZoom: { value: 1 },
-    uFocus: { value: new THREE.Vector2(0.46, 0.5) },
+    uColour: { value: 0 },
     uLines: { value: 200 },
-    uLamp: { value: new THREE.Vector2(0.5, 0.5) },
-    uLampR: { value: 0.3 },
-    uLampOn: { value: 0 },
     uDark: { value: 0 },
     uInk: { value: new THREE.Color() },
     uPaper: { value: new THREE.Color() },
@@ -524,116 +575,283 @@ async function engrave() {
       varying vec2 vUv;
       void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
     fragmentShader: `
-      uniform sampler2D uTex; uniform vec2 uSize; uniform float uTime; uniform float uReveal;
-      uniform float uZoom; uniform vec2 uFocus; uniform float uLines;
-      uniform vec2 uLamp; uniform float uLampR; uniform float uLampOn; uniform float uDark;
+      uniform sampler2D uPaint; uniform sampler2D uFlow; uniform sampler2D uMask;
+      uniform vec2 uSize; uniform float uTime; uniform float uStorm;
+      uniform vec3 uCam; uniform vec2 uTilt; uniform float uDolly; uniform vec3 uRock;
+      uniform float uReveal; uniform float uColour; uniform float uLines; uniform float uDark;
       uniform vec3 uInk; uniform vec3 uPaper;
       varying vec2 vUv;
+      const vec2 ASPECT = vec2(0.8046, 1.0);
+      const vec2 PIVOT = vec2(0.56, 0.285);
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
         vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
       }
-      float luma(vec3 c) { return pow(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1.0 / 2.2); }
       float lines(float phase, float t) {
         float d = abs(fract(phase) - 0.5) * 2.0;
         float w = fwidth(phase) * 1.6;
         return 1.0 - smoothstep(t - w, t + w, d);
       }
+      // Two samples half a cycle apart, each sliding along the flow and
+      // crossfaded so that neither is seen when it jumps back.
+      vec3 flowed(vec2 uv, vec2 v, float t) {
+        float p0 = fract(t), p1 = fract(t + 0.5);
+        vec3 a = texture2D(uPaint, uv - v * (p0 - 0.5)).rgb;
+        vec3 b = texture2D(uPaint, uv - v * (p1 - 0.5)).rgb;
+        return mix(a, b, abs(1.0 - 2.0 * p0));
+      }
       void main() {
-        vec2 uv = uFocus + (vUv - uFocus) / uZoom;
-        // The sea keeps moving: the lower part of the picture and the wave.
-        float sea = smoothstep(0.5, 0.12, uv.y) * (0.55 + 0.45 * smoothstep(0.75, 0.2, uv.x));
-        vec2 flow = vec2(noise(uv * vec2(6.0, 11.0) + vec2(uTime * 0.16, uTime * 0.05)),
-                         noise(uv * vec2(8.0, 5.0) - vec2(uTime * 0.09, -uTime * 0.04))) - 0.5;
-        uv += flow * 0.007 * sea;
-        vec3 paint = texture2D(uTex, uv).rgb;
-        float L = luma(texture2D(uTex, uv, 1.2).rgb);
-        L = smoothstep(0.03, 0.8, L);
-        float tone = mix(pow(1.0 - L, 1.25), L, uDark);
-        // Lines across, bent by the tone and by the engraver's hand.
-        float phase = uv.y * uLines + L * 2.4 + 0.3 * sin(uv.x * 19.0 + uv.y * 6.0);
-        // Never quite solid: a hairline of paper stays between the lines.
-        float ink = lines(phase, min(tone * 1.02 - 0.05, 0.8));
-        // Cross-hatching in the deepest shadows (ink on paper only: a
-        // white-line plate leaves its highlights unhatched).
-        float phase2 = (uv.x * 0.6 - uv.y * 0.8) * uLines * 0.9 * (uSize.x / uSize.y);
-        ink = max(ink, 0.9 * (1.0 - uDark) * lines(phase2, clamp((tone - 0.6) * 1.3, 0.0, 0.55)));
-        // The burin's pass at the start.
-        float s = vUv.x * 0.65 + (1.0 - vUv.y) * 0.35;
-        ink *= smoothstep(s - 0.04, s + 0.01, uReveal * 1.08 - 0.04);
-        vec3 paper = uPaper * (0.988 + 0.024 * noise(gl_FragCoord.xy * 0.55));
-        vec3 plate = mix(paper, uInk, ink);
-        // The lamp.
-        vec2 asp = vec2(uSize.x / uSize.y, 1.0);
-        float d = distance(vUv * asp, uLamp * asp);
-        float lamp = (1.0 - smoothstep(uLampR * 0.35, uLampR, d)) * uLampOn;
-        gl_FragColor = vec4(mix(plate, paint, lamp), 1.0);
+        // The view, with a little depth: what is near moves more than what is far.
+        vec2 uv0 = uCam.xy + (vUv - 0.5) / uCam.z;
+        float k = texture2D(uFlow, uv0).b - 0.45;
+        vec2 uv = uCam.xy + (vUv - 0.5) / (uCam.z * (1.0 + uDolly * k)) - uTilt * k;
+        // The boat pitches and heaves.
+        float b = texture2D(uMask, uv).g;
+        vec2 q = (uv - PIVOT) * ASPECT;
+        float an = -uRock.x * b, ca = cos(an), sa = sin(an);
+        q = vec2(ca * q.x - sa * q.y, sa * q.x + ca * q.y);
+        uv = PIVOT + q / ASPECT - uRock.yz * b;
+        // Sea, foam and cloud run along the flow; boat, crew and rigging hold.
+        vec3 m = texture2D(uMask, uv).rgb;
+        vec3 f = texture2D(uFlow, uv).rgb;
+        float go = (1.0 - m.r) * (0.3 + 0.7 * uStorm);
+        vec2 v = (f.rg - 0.5) * vec2(32.0 / 900.0, -32.0 / 1119.0) * go;
+        vec2 boil = vec2(noise(uv * 46.0 + vec2(0.0, uTime * 0.9)), noise(uv * 46.0 + vec2(5.2, -uTime * 0.8))) - 0.5;
+        uv += boil * 0.0022 * m.b * go;
+        float n = noise(uv * 2.5) * 1.5;
+        vec3 col = mix(flowed(uv, v, uTime / 7.0 + n), flowed(uv, v, uTime / 2.6 + n), m.b);
+        // Light moving in the clouds.
+        float L0 = dot(col, vec3(0.2126, 0.7152, 0.0722));
+        float sky = (1.0 - m.g) * (1.0 - m.b) * smoothstep(0.35, 0.75, uv.y);
+        col *= 1.0 + sky * smoothstep(0.08, 0.5, L0) * 0.18 *
+          (noise(uv * vec2(2.2, 3.0) + vec2(uTime * 0.035, uTime * 0.02)) - 0.45);
+        // The opening: an engraving, then the colour from the light.
+        if (uColour < 1.0) {
+          float L = pow(dot(texture2D(uPaint, uv, 1.2).rgb, vec3(0.2126, 0.7152, 0.0722)), 1.0 / 2.2);
+          L = smoothstep(0.03, 0.8, L);
+          float tone = mix(pow(1.0 - L, 1.25), L, uDark);
+          float phase = vUv.y * uLines + L * 2.4 + 0.3 * sin(vUv.x * 19.0 + vUv.y * 6.0);
+          float ink = lines(phase, min(tone * 1.02 - 0.05, 0.8));
+          float phase2 = (vUv.x * 0.6 - vUv.y * 0.8) * uLines * 0.9 * (uSize.x / uSize.y);
+          ink = max(ink, 0.9 * (1.0 - uDark) * lines(phase2, clamp((tone - 0.6) * 1.3, 0.0, 0.55)));
+          float s = vUv.x * 0.65 + (1.0 - vUv.y) * 0.35;
+          ink *= smoothstep(s - 0.04, s + 0.01, uReveal * 1.08 - 0.04);
+          vec3 paper = uPaper * (0.988 + 0.024 * noise(gl_FragCoord.xy * 0.55));
+          vec3 plate = mix(paper, uInk, ink);
+          float d = distance(uv * ASPECT, vec2(0.22, 0.78) * ASPECT) + 0.14 * noise(uv * 7.0);
+          col = mix(plate, col, smoothstep(0.07, -0.07, d - uColour * 1.4));
+        }
+        gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
       }`,
   });
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
 
+  // Spray: each drop leaves the water, rises, falls and fades, on a loop.
+  const N = 260;
+  const from = new Float32Array(N * 4), seed = new Float32Array(N * 4);
+  const total = SPRAY.reduce((s, e) => s + e.w, 0);
+  const rnd = (lo, hi) => lo + (hi - lo) * Math.random();
+  for (let i = 0; i < N; i++) {
+    let pick = Math.random() * total, e = SPRAY[0];
+    for (const s of SPRAY) { if ((pick -= s.w) <= 0) { e = s; break; } }
+    const t = Math.random();
+    const [x, y] = PX(e.a[0] + (e.b[0] - e.a[0]) * t + rnd(-6, 6), e.a[1] + (e.b[1] - e.a[1]) * t + rnd(-6, 6));
+    from.set([x, y, rnd(...e.vx) / 900, -rnd(...e.vy) / 1119], i * 4);
+    seed.set([Math.random(), rnd(0.9, 1.7), Math.random(), Math.random()], i * 4);
+  }
+  const sprayGeo = new THREE.BufferGeometry();
+  sprayGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  sprayGeo.setAttribute('aFrom', new THREE.BufferAttribute(from, 4));
+  sprayGeo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 4));
+  const sprayU = {
+    uTime: u.uTime, uCam: u.uCam, uTilt: u.uTilt, uDolly: u.uDolly, uStorm: u.uStorm,
+    uPR: { value: 1 }, uOn: { value: 0 },
+  };
+  const spray = new THREE.Points(sprayGeo, new THREE.ShaderMaterial({
+    uniforms: sprayU,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute vec4 aFrom; attribute vec4 aSeed;
+      uniform float uTime; uniform vec3 uCam; uniform vec2 uTilt; uniform float uDolly;
+      uniform float uPR; uniform float uStorm;
+      varying float vA;
+      void main() {
+        float life = aSeed.y;
+        float age = fract(uTime / life + aSeed.x);
+        float t = age * life;
+        vec2 p = aFrom.xy + aFrom.zw * t - vec2(0.0, 0.076 * t * t);
+        float k = 0.25;
+        vec2 s = 0.5 + (p + uTilt * k - uCam.xy) * uCam.z * (1.0 + uDolly * k);
+        gl_Position = vec4(s * 2.0 - 1.0, 0.0, 1.0);
+        gl_PointSize = (1.0 + 2.2 * aSeed.z * aSeed.z) * uPR * clamp(sqrt(uCam.z), 1.0, 2.0);
+        vA = smoothstep(0.0, 0.12, age) * pow(1.0 - age, 1.4) * smoothstep(0.35, 0.9, uStorm);
+      }`,
+    fragmentShader: `
+      uniform float uOn;
+      varying float vA;
+      void main() {
+        float r = length(gl_PointCoord - 0.5) * 2.0;
+        float a = (1.0 - smoothstep(0.2, 1.0, r)) * vA * 0.5 * uOn;
+        gl_FragColor = vec4(vec3(0.93, 0.94, 0.95), a);
+      }`,
+  }));
+  spray.frustumCulled = false;
+  scene.add(spray);
+
   const dark = window.matchMedia('(prefers-color-scheme: dark)');
-  function paint() {
+  function theme() {
     const cs = getComputedStyle(root);
     u.uInk.value.set(cs.getPropertyValue('--ink').trim());
     u.uPaper.value.set(cs.getPropertyValue('--ground').trim());
     u.uDark.value = dark.matches ? 1 : 0;
   }
-  paint();
-  dark.addEventListener('change', paint);
+  theme();
+  dark.addEventListener('change', theme);
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     renderer.getDrawingBufferSize(u.uSize.value);
-    // Lines a few pixels apart: a little wider on 1x screens so they stay crisp.
     u.uLines.value = Math.round(h / (renderer.getPixelRatio() >= 2 ? 3.6 : 4.4));
+    sprayU.uPR.value = renderer.getPixelRatio();
+    measure();
   }
-  new ResizeObserver(resize).observe(canvas);
-  resize();
 
-  // The lamp: the pointer when it is over the painting, otherwise a slow
-  // wander over the boat. A tap leaves it where the finger was for a while.
-  const lamp = { x: 0.5, y: 0.5, on: 0, held: 0, px: 0.5, py: 0.5, over: false };
-  const local = (e) => {
-    const r = canvas.getBoundingClientRect();
-    return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
-  };
-  canvas.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse' || e.pointerType === 'pen') { [lamp.px, lamp.py] = local(e); lamp.over = true; }
+  // ---------------------------------------------------------- the reading
+  const wide = window.matchMedia('(min-width: 1000px) and (min-aspect-ratio: 5/4)');
+  const caps = [...document.querySelectorAll('.plate .cap > span')];
+  const stops = STOPS.map((s) => ({ ...s, node: document.querySelector(s.el), c: 0 }));
+  let tour = false, shown = 0;
+  function measure() {
+    tour = wide.matches;
+    caps.forEach((c, i) => { c.hidden = !tour && i > 0; });
+    if (!tour) { caption(0); return; }
+    // Each stop is a scroll position: where its part of the text sits on the
+    // reading line, a little under the middle of the window.
+    const vh = window.innerHeight, end = Math.max(1, document.documentElement.scrollHeight - vh);
+    const gap = 0.13 * vh, last = stops.length - 1;
+    for (const s of stops) {
+      const r = s.node.getBoundingClientRect();
+      s.c = r.top + window.scrollY + r.height / 2 - 0.45 * vh;
+    }
+    // The first holds at the top; the text above the line at the start
+    // follows after a short scroll; the last ones come before the page ends.
+    stops[0].c = 0;
+    for (let i = 1; i <= last; i++) stops[i].c = Math.max(stops[i].c, stops[i - 1].c + gap);
+    for (let i = last; i >= 1; i--) stops[i].c = Math.min(stops[i].c, end - (last - i) * gap);
+    if (stops.some((s, i) => i && s.c <= stops[i - 1].c)) stops.forEach((s, i) => { s.c = end * i / last; });
+  }
+  function caption(i) {
+    if (i === shown) return;
+    caps.forEach((c, j) => c.classList.toggle('on', j === i));
+    shown = i;
+  }
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const want = { x: 0.5, y: 0.5, z: 1.035, storm: 1 };
+  function aim(t) {
+    if (!tour) {
+      // Narrow screens: the whole picture, drifting, closing in a little as it leaves.
+      const r = canvas.getBoundingClientRect();
+      const gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
+      want.z = 1.045 + 0.1 * gone;
+      want.x = 0.5 + 0.012 * Math.sin(t * 0.07);
+      want.y = 0.5 + 0.01 * Math.sin(t * 0.05 + 1);
+      want.storm = 1;
+      return;
+    }
+    const line = window.scrollY;
+    let i = 0, f = 0;
+    if (line > stops[0].c) {
+      i = stops.length - 2; f = 1;
+      for (let j = 0; j < stops.length - 1; j++) {
+        if (line < stops[j + 1].c) { i = j; f = (line - stops[j].c) / (stops[j + 1].c - stops[j].c); break; }
+      }
+    }
+    const e = smooth(0.15, 0.85, f), a = stops[i], b = stops[i + 1];
+    const pa = PX(...a.at), pb = PX(...b.at);
+    want.x = pa[0] + (pb[0] - pa[0]) * e;
+    want.y = pa[1] + (pb[1] - pa[1]) * e;
+    want.z = Math.exp(Math.log(a.z) + (Math.log(b.z) - Math.log(a.z)) * e);
+    want.storm = a.storm + (b.storm - a.storm) * e;
+    let k = f < 0.5 ? i : i + 1;
+    while (stops[k].cap < 0) k--;
+    caption(stops[k].cap);
+  }
+
+  // The pointer tilts the view a little; without one it sways by itself.
+  const pointer = { x: 0, y: 0, on: false };
+  window.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+    pointer.x = e.clientX / window.innerWidth - 0.5;
+    pointer.y = 0.5 - e.clientY / window.innerHeight;
+    pointer.on = true;
   });
-  canvas.addEventListener('pointerleave', () => { lamp.over = false; });
-  canvas.addEventListener('pointerdown', (e) => { [lamp.px, lamp.py] = local(e); lamp.held = performance.now() + 4500; });
+  window.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer.on = false; });
+
+  new ResizeObserver(resize).observe(canvas);
+  new ResizeObserver(measure).observe(document.querySelector('.text'));
+  wide.addEventListener('change', resize);
+  resize();
 
   let visible = true;
   new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(canvas);
 
-  let t0 = null, tPrev = 0;
+  // Close views want the full-size scan; fetch it once the opening is done.
+  let sharp = false;
+  function sharpen() {
+    sharp = true;
+    loader.loadAsync('storm-3000.jpg').then((t) => {
+      asPaint(t);
+      renderer.initTexture(t);
+      u.uPaint.value = t;
+      paint.dispose();
+    }).catch(() => {});
+  }
+
+  const cam = { x: 0.5, y: 0.5, z: 1.035, storm: 1, tx: 0, ty: 0 };
+  let t0 = null, tPrev = 0, first = true;
   function frameLoop(now) {
     requestAnimationFrame(frameLoop);
     if (t0 === null) { t0 = now; tPrev = now; }
     const t = (now - t0) / 1000, dt = Math.min(0.05, (now - tPrev) / 1000);
     tPrev = now;
     if (!visible) return;
+    aim(t);
+    if (first) { Object.assign(cam, want); first = false; }
+    const kc = 1 - Math.exp(-dt * 3.2);
+    cam.x += (want.x - cam.x) * kc;
+    cam.y += (want.y - cam.y) * kc;
+    cam.z = Math.exp(Math.log(cam.z) + (Math.log(want.z) - Math.log(cam.z)) * kc);
+    cam.storm += (want.storm - cam.storm) * (1 - Math.exp(-dt * 1.2));
+    const half = 0.5 / cam.z, m = 0.014;
+    const cx = Math.min(1 - half - m, Math.max(half + m, cam.x));
+    const cy = Math.min(1 - half - m, Math.max(half + m, cam.y));
+    u.uCam.value.set(cx, cy, cam.z);
+    u.uDolly.value = 0.08 * (cam.z - 1);
+    const gx = pointer.on ? pointer.x * 0.012 : 0.004 * Math.sin(t * 0.13);
+    const gy = pointer.on ? pointer.y * 0.012 : 0.003 * Math.sin(t * 0.1 + 2);
+    const kt = 1 - Math.exp(-dt * 2.4);
+    cam.tx += (gx - cam.tx) * kt;
+    cam.ty += (gy - cam.ty) * kt;
+    u.uTilt.value.set(cam.tx, cam.ty);
+    const s = cam.storm;
+    u.uStorm.value = s;
+    u.uRock.value.set(
+      s * (0.0085 * Math.sin(t * 0.55) + 0.003 * Math.sin(t * 0.93 + 1.7)),
+      s * 0.0015 * Math.sin(t * 0.37),
+      s * 0.0035 * Math.sin(t * 0.55 + 1.1));
     u.uTime.value = t;
     u.uReveal.value = 1 - Math.pow(1 - Math.min(1, Math.max(0, (t - 0.2) / 2.6)), 3);
-    const follow = lamp.over || now < lamp.held;
-    const gx = follow ? lamp.px : 0.47 + 0.2 * Math.sin(t * 0.21) + 0.05 * Math.sin(t * 0.53);
-    const gy = follow ? lamp.py : 0.47 + 0.15 * Math.sin(t * 0.163 + 1.1) + 0.04 * Math.sin(t * 0.41);
-    const k = 1 - Math.exp(-dt * (follow ? 9 : 2.5));
-    lamp.x += (gx - lamp.x) * k;
-    lamp.y += (gy - lamp.y) * k;
-    const want = t > 2.2 ? 1 : 0;
-    lamp.on += (want - lamp.on) * (1 - Math.exp(-dt * 1.6));
-    u.uLamp.value.set(lamp.x, lamp.y);
-    u.uLampOn.value = lamp.on;
-    u.uLampR.value = lamp.over ? 0.24 : 0.3;
-    // Reading down the page draws the eye into the boat.
-    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    u.uZoom.value = 1 + 0.12 * Math.min(1, window.scrollY / max);
+    const c = Math.min(1, Math.max(0, (t - 2.5) / 2.2));
+    u.uColour.value = c * c * (3 - 2 * c);
+    sprayU.uOn.value = u.uColour.value;
+    if (!sharp && t > 5 && tour) sharpen();
     renderer.render(scene, camera);
   }
   requestAnimationFrame(frameLoop);
