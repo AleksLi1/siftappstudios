@@ -272,14 +272,16 @@ html.live .board { position: absolute; inset: 0; width: 100%; height: 100%; over
 html.live .text { position: relative; }
 html.live .text p:nth-of-type(2) { margin-top: 70vh; }
 html.live .text p:nth-of-type(3) { margin-top: 85vh; }
-html.live .text p:nth-of-type(4) { margin-top: 150vh; }
-html.live .text { padding-bottom: 95vh; }
+html.live .text p:nth-of-type(4) { margin-top: 175vh; }
+/* The last paragraph ends beside the painting, whole again. */
+html.live .text { padding-bottom: 2rem; }
 
 /* Wide windows: the figure fills the left of the window, the text the right. */
 @media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
   html.live main { grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); justify-content: stretch; }
   html.live .plate { height: 100vh; height: 100svh; margin: 0; padding: 4.75rem 0 1.5rem; background: none; }
   html.live .plate figcaption { max-width: 30rem; margin-top: 1.1rem; }
+  html.live .text { padding-bottom: 40vh; }
 }
 </style>
 </head>
@@ -902,14 +904,17 @@ async function figure() {
   new ResizeObserver(resize).observe(canvas);
   resize();
 
-  // Where the reader is: 0 at the top, 1, 2 and 3 as the second, third and
-  // last paragraphs come up to the reading line, 4 at the foot of the page.
+  // Where the reader is: 0 at the top, 1 and 2 as the second and third
+  // paragraphs come up to the reading line, 3 most of a screen before the
+  // foot of the page, 4 at the foot, where the last paragraph rests beside
+  // the painting.
   function readS() {
     const y = window.scrollY, h = window.innerHeight;
     const line = h * (wideQ.matches ? 0.62 : 0.9);
+    const end = document.documentElement.scrollHeight - h;
     const A = [0];
-    for (let k = 1; k < 4; k++) A.push(steps[k].getBoundingClientRect().top + y - line);
-    A.push(document.documentElement.scrollHeight - h);
+    for (let k = 1; k < 3; k++) A.push(steps[k].getBoundingClientRect().top + y - line);
+    A.push(end - 0.8 * h, end);
     for (let k = 1; k < 5; k++) A[k] = Math.max(A[k], A[k - 1] + 1);
     if (y <= 0) return 0;
     for (let k = 0; k < 4; k++) if (y < A[k + 1]) return k + (y - A[k]) / (A[k + 1] - A[k]);
