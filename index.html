@@ -958,13 +958,6 @@ async function fly() {
   }
   const scrollY = () => (lenis ? lenis.scroll : window.scrollY);
 
-  // Pointer: a little parallax, never more than a fraction of a unit.
-  const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
-  window.addEventListener('pointermove', (e) => {
-    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
-  }, { passive: true });
-
   // ---------------------------------------------------------------- loop
   resize(true);
   await splitLede();
@@ -1006,9 +999,7 @@ async function fly() {
     cam.fov = lerp(cam.fov, goal.fov, k);
     cam.shift[0] = lerp(cam.shift[0], goal.shift[0], k);
     cam.shift[1] = lerp(cam.shift[1], goal.shift[1], k);
-    pointer.sx = lerp(pointer.sx, pointer.x, 1 - Math.exp(-dt * 3));
-    pointer.sy = lerp(pointer.sy, pointer.y, 1 - Math.exp(-dt * 3));
-    sway.set(Math.sin(t * 0.11) * 0.35 + pointer.sx * 0.55, Math.sin(t * 0.083 + 1.3) * 0.22 - pointer.sy * 0.35, 0);
+    sway.set(Math.sin(t * 0.11) * 0.35, Math.sin(t * 0.083 + 1.3) * 0.22, 0);
     camera.position.copy(cam.pos).add(sway);
     look.copy(cam.at);
     camera.lookAt(look);

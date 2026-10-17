@@ -692,7 +692,6 @@ async function figure() {
     uCam: { value: new THREE.Vector3(0, H / 2, 1) },
     uView: { value: new THREE.Vector2(vw, vh) },
     uRock: { value: new THREE.Vector3() },
-    uPush: { value: new THREE.Vector3(-1e5, -1e5, 0) },
     uRing: { value: new THREE.Vector4(-1e5, -1e5, -99, 0) },
   };
   const dots = new THREE.Points(geo, new THREE.ShaderMaterial({
@@ -705,7 +704,7 @@ async function figure() {
       attribute vec4 aFly; attribute vec2 aSlot;
       uniform float uTime, uIntro, uStorm, uCell, uBead, uClear, uDark, uPour, uBack, uDpr;
       uniform vec3 uCam; uniform vec2 uView;
-      uniform vec3 uRock; uniform vec3 uPush; uniform vec4 uRing;
+      uniform vec3 uRock; uniform vec4 uRing;
       varying vec3 vCol; varying float vR; varying float vPx; varying float vA;
       const float DX = ${DX}.0, DY = ${DY}.0, APEX = ${APEX}.0, TF = ${TF};
       const vec2 PIVOT = vec2(505.0, 319.0);
@@ -783,11 +782,8 @@ async function figure() {
         float home = aFly.w + 0.4;
         vA = 1.0 - smoothstep(home + 0.15, home + 0.2, uBack);
 
-        // ---- The pointer parts the dots; a tap sends a ring out.
+        // ---- A tap sends a ring out.
         float z = uCam.z;
-        vec2 d = w - uPush.xy;
-        float r = length(d) + 0.001;
-        w += d / r * uPush.z * 15.0 * z * pow(max(0.0, 1.0 - r / (70.0 * z)), 2.0);
         vec2 d2 = w - uRing.xy;
         float r2 = length(d2) + 0.001, age = uTime - uRing.z;
         float ring = uRing.w * exp(-pow((r2 / z - age * 200.0) / 18.0, 2.0)) * exp(-age * 1.4);
@@ -1002,19 +998,11 @@ async function figure() {
   theme();
   dark.addEventListener('change', theme);
 
-  // The pointer, in the figure's world.
-  const push = { x: -1e5, y: -1e5, want: 0, on: 0 };
+  // A click or a tap sends a ring out; a cursor resting on the figure does nothing.
   const local = (e) => {
     const r = canvas.getBoundingClientRect(), c = u.uCam.value;
     return [c.x + (e.clientX - r.left - r.width / 2) * c.z, c.y - (e.clientY - r.top - r.height / 2) * c.z];
   };
-  canvas.addEventListener('pointermove', (e) => {
-    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
-    const [x, y] = local(e);
-    if (push.want === 0) { push.x = x; push.y = y; }
-    push.tx = x; push.ty = y; push.want = 1;
-  });
-  canvas.addEventListener('pointerleave', () => { push.want = 0; });
   canvas.addEventListener('pointerdown', (e) => {
     const [x, y] = local(e);
     u.uRing.value.set(x, y, u.uTime.value, 1);
@@ -1083,13 +1071,6 @@ async function figure() {
       storm * (0.006 * Math.sin(t * 0.55) + 0.002 * Math.sin(t * 0.93 + 1.7)),
       storm * 1.4 * Math.sin(t * 0.37),
       storm * 2.6 * Math.sin(t * 0.55 + 1.1));
-    if (push.tx !== undefined) {
-      const kp = 1 - Math.exp(-dt * 12);
-      push.x += (push.tx - push.x) * kp;
-      push.y += (push.ty - push.y) * kp;
-    }
-    push.on += (push.want - push.on) * (1 - Math.exp(-dt * 5));
-    u.uPush.value.set(push.x, push.y, push.on);
     renderer.render(scene, camera);
   }
   requestAnimationFrame(frameLoop);
