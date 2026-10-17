@@ -46,7 +46,6 @@
   --orbit: #27303a;
   --line: #b9c1c8;
   --sun: #b8964f;
-  --sweep: rgba(39, 48, 58, 0.07);
   --select: rgba(184, 150, 79, 0.32);
   --gutter: clamp(1rem, 4.2vw, 3.5rem);
 }
@@ -58,7 +57,6 @@
     --orbit: #b3bcc4;
     --line: #38414a;
     --sun: #cdae68;
-    --sweep: rgba(217, 223, 228, 0.07);
     --select: rgba(205, 174, 104, 0.34);
   }
 }
@@ -154,7 +152,7 @@ figure { margin: 0; }
 .plate .leader { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .plate .sun { fill: var(--sun); }
 .plate .planet { fill: var(--ink); }
-.plate .sweep { fill: var(--sweep); }
+.plate .trail { fill: none; stroke: var(--ink); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 
 /* The orbit spans 600 of the figure's 660 units, so each text is inset by
    30/660 of the width to hang from its end. */
@@ -332,7 +330,7 @@ html.sky .copy, html.sky .lede { will-change: opacity, filter; }
         <svg viewBox="-330 -128 660 280" role="img" aria-label="An orbit around the sun, with aphelion at the far end and perihelion at the near end">
           <line class="leader" x1="-300" y1="0" x2="-300" y2="152"/>
           <line class="leader" x1="300" y1="0" x2="300" y2="152"/>
-          <g id="sweeps"></g>
+          <g id="trail"></g>
           <ellipse class="orbit" cx="0" cy="0" rx="300" ry="120"/>
           <circle class="sun" cx="180" cy="0" r="5.5"/>
           <circle class="planet" id="planet" r="3.6" cx="300" cy="0"/>
@@ -373,55 +371,46 @@ html.sky .copy, html.sky .lede { will-change: opacity, filter; }
 </main>
 
 <script>
-// The still figure: Kepler's second law drawn exactly. The orbit is seen at a
-// tilt (y scaled by 0.5); a linear map keeps ratios of area, so the shaded
-// sweep is the same area wherever the planet is.
+// The still figure: Kepler's second law drawn exactly, the orbit seen at a
+// tilt. The trail is where the planet was over a fixed stretch of time, so it
+// is short where the planet is slow and long where it is fast.
 window.stillFigure = function () {
   if (window.stillFigure.done) return;
   window.stillFigure.done = true;
   var a = 300, e = 0.6, tilt = 0.5;
   var b = a * Math.sqrt(1 - e * e) * tilt;
-  var span = Math.PI / 6;
+  var span = 0.42, SEG = 28;
   var NS = 'http://www.w3.org/2000/svg';
   var planet = document.getElementById('planet');
-  var sweeps = document.getElementById('sweeps');
+  var group = document.getElementById('trail');
   function eccentric(M) {
     var E = M;
     for (var i = 0; i < 8; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
     return E;
   }
   function at(M) { var E = eccentric(M); return [a * Math.cos(E), -b * Math.sin(E)]; }
-  function wedge(M0, M1) {
-    var d = 'M' + a * e + ' 0';
-    for (var i = 0; i <= 32; i++) {
-      var p = at(M0 + (M1 - M0) * i / 32);
-      d += 'L' + p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+  var parts = [];
+  for (var j = 0; j < SEG; j++) {
+    var el = document.createElementNS(NS, 'path'), f = (j + 1) / SEG;
+    el.setAttribute('class', 'trail');
+    el.setAttribute('stroke-opacity', (0.75 * Math.pow(f, 2.2)).toFixed(3));
+    el.setAttribute('stroke-width', (0.5 + 2.6 * Math.pow(f, 1.6)).toFixed(2));
+    group.appendChild(el);
+    parts.push(el);
+  }
+  function draw(M) {
+    for (var j = 0; j < SEG; j++) {
+      var p0 = at(M - span * (1 - j / SEG)), p1 = at(M - span * (1 - (j + 1) / SEG));
+      parts[j].setAttribute('d', 'M' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2) + 'L' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2));
     }
-    return d + 'Z';
+    planet.setAttribute('cx', p1[0].toFixed(2));
+    planet.setAttribute('cy', p1[1].toFixed(2));
   }
-  function path() {
-    var el = document.createElementNS(NS, 'path');
-    el.setAttribute('class', 'sweep');
-    sweeps.appendChild(el);
-    return el;
-  }
-  function place(M) {
-    var p = at(M);
-    planet.setAttribute('cx', p[0].toFixed(2));
-    planet.setAttribute('cy', p[1].toFixed(2));
-  }
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    path().setAttribute('d', wedge(-span / 2, span / 2));
-    path().setAttribute('d', wedge(Math.PI - span / 2, Math.PI + span / 2));
-    place(span / 2);
-    return;
-  }
-  var sweep = path(), start = null, period = 36000, M0 = -2.2;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { draw(0.06); return; }
+  var start = null, period = 36000, M0 = -2.2;
   function frame(t) {
     if (start === null) start = t;
-    var M = M0 + 2 * Math.PI * ((t - start) % period) / period;
-    sweep.setAttribute('d', wedge(M - span, M));
-    place(M);
+    draw(M0 + 2 * Math.PI * ((t - start) % period) / period);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -544,7 +533,21 @@ async function fly() {
   }
   const tickGeo = new THREE.BufferGeometry();
   tickGeo.setAttribute('position', new THREE.BufferAttribute(tickPts, 3));
-  const tickMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+  // They give way as the planet passes through them.
+  const tickMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { uColor: { value: new THREE.Color() }, uOpacity: { value: 0 }, uPlanet: { value: new THREE.Vector3(99, 0, 0) } },
+    vertexShader: `
+      varying vec3 vW;
+      void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uOpacity; uniform vec3 uPlanet;
+      varying vec3 vW;
+      void main() {
+        gl_FragColor = vec4(uColor, uOpacity * smoothstep(0.3, 0.7, distance(vW, uPlanet)));
+        #include <colorspace_fragment>
+      }`,
+  });
   scene.add(new THREE.LineSegments(tickGeo, tickMat));
 
   // The line of apsides, through the sun, dashed.
@@ -554,36 +557,78 @@ async function fly() {
   aps.computeLineDistances();
   scene.add(aps);
 
-  // ------------------------------------------------------------ sweeps
-  const SEG = 48;
-  const SPAN = Math.PI / 6;
-  function wedge() {
-    const pos = new Float32Array((SEG + 2) * 3);
-    const idx = [];
-    for (let i = 0; i < SEG; i++) idx.push(0, i + 1, i + 2);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setIndex(idx);
-    const m = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-    const mesh = new THREE.Mesh(g, m);
-    mesh.frustumCulled = false;
-    mesh.renderOrder = -1;
-    scene.add(mesh);
-    return mesh;
+  // ------------------------------------------------------------- trail
+  // Where the planet has been over a fixed stretch of time. The stretch is the
+  // same everywhere, so the trail is short where the planet is slow and long
+  // where it is fast. A ribbon that always faces the camera, as wide as the
+  // planet at its head (never thinner than a hairline), fading to nothing.
+  const TRAIL_SEG = 160, TRAIL_SPAN = 0.42;
+  const trailN = (TRAIL_SEG + 1) * 2;
+  const trailPos = new Float32Array(trailN * 3), trailNext = new Float32Array(trailN * 3);
+  const trailSide = new Float32Array(trailN), trailT = new Float32Array(trailN);
+  const trailIdx = [];
+  for (let i = 0; i <= TRAIL_SEG; i++) {
+    trailSide[i * 2] = -1; trailSide[i * 2 + 1] = 1;
+    trailT[i * 2] = trailT[i * 2 + 1] = i / TRAIL_SEG;
+    if (i < TRAIL_SEG) { const a = i * 2; trailIdx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
   }
-  function shape(mesh, M0, M1) {
-    const arr = mesh.geometry.attributes.position.array;
-    arr[0] = FX; arr[1] = 0; arr[2] = 0;
-    for (let i = 0; i <= SEG; i++) {
-      along(M0 + ((M1 - M0) * i) / SEG, p);
-      arr[(i + 1) * 3] = p.x; arr[(i + 1) * 3 + 1] = 0; arr[(i + 1) * 3 + 2] = p.z;
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+  trailGeo.setAttribute('aNext', new THREE.BufferAttribute(trailNext, 3));
+  trailGeo.setAttribute('aSide', new THREE.BufferAttribute(trailSide, 1));
+  trailGeo.setAttribute('aT', new THREE.BufferAttribute(trailT, 1));
+  trailGeo.setIndex(trailIdx);
+  const trailMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: {
+      uRes: { value: new THREE.Vector2(1, 1) }, uHalf: { value: 0.05 }, uMinPx: { value: 0.8 },
+      uColor: { value: new THREE.Color() }, uAlpha: { value: 0 },
+    },
+    vertexShader: `
+      attribute vec3 aNext; attribute float aSide; attribute float aT;
+      uniform vec2 uRes; uniform float uHalf; uniform float uMinPx;
+      varying float vT; varying float vSide;
+      void main() {
+        vec4 a = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 b = projectionMatrix * modelViewMatrix * vec4(aNext, 1.0);
+        vec2 hr = 0.5 * uRes;
+        vec2 sa = a.xy / a.w * hr, sb = b.xy / b.w * hr;
+        vec2 d = sb - sa;
+        vec2 dir = length(d) > 1e-5 ? normalize(d) : vec2(1.0, 0.0);
+        float taper = 0.06 + 0.94 * pow(aT, 1.6);
+        float px = max(uHalf * projectionMatrix[1][1] * hr.y / a.w, uMinPx) * taper;
+        a.xy += vec2(-dir.y, dir.x) * aSide * px / hr * a.w;
+        gl_Position = a;
+        vT = aT; vSide = aSide;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uAlpha;
+      varying float vT; varying float vSide;
+      void main() {
+        float across = 1.0 - smoothstep(0.2, 1.0, abs(vSide));
+        float along = pow(vT, 2.2);
+        gl_FragColor = vec4(uColor, across * along * uAlpha);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const trail = new THREE.Mesh(trailGeo, trailMat);
+  trail.frustumCulled = false;
+  trail.renderOrder = 1;
+  scene.add(trail);
+  const q3 = new THREE.Vector3();
+  function trace(M) {
+    for (let i = 0; i <= TRAIL_SEG; i++) {
+      const m = M - TRAIL_SPAN * (1 - i / TRAIL_SEG);
+      along(m, p); along(m + 0.004, q3);
+      for (let s = 0; s < 2; s++) {
+        const o = (i * 2 + s) * 3;
+        trailPos[o] = p.x; trailPos[o + 1] = 0; trailPos[o + 2] = p.z;
+        trailNext[o] = q3.x; trailNext[o + 1] = 0; trailNext[o + 2] = q3.z;
+      }
     }
-    mesh.geometry.attributes.position.needsUpdate = true;
+    trailGeo.attributes.position.needsUpdate = true;
+    trailGeo.attributes.aNext.needsUpdate = true;
   }
-  const sweep = wedge();
-  const still1 = wedge(), still2 = wedge();
-  shape(still1, -SPAN / 2, SPAN / 2);
-  shape(still2, Math.PI - SPAN / 2, Math.PI + SPAN / 2);
 
   // --------------------------------------------------------------- sun
   const sunMat = new THREE.ShaderMaterial({
@@ -650,15 +695,41 @@ async function fly() {
   glow.renderOrder = 2;
   scene.add(glow);
 
-  const sunLight = new THREE.PointLight(0xffffff, 3.2, 0, 0);
-  sunLight.position.copy(sun.position);
-  const fill = new THREE.AmbientLight(0xffffff, 0.12);
-  scene.add(sunLight, fill);
-
   // ------------------------------------------------------------ planet
-  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.75, metalness: 0 });
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(0.15, 48, 32), planetMat);
+  // Lit by the sun alone: a day side, a soft terminator, a night side that
+  // still shows against the sky, and a thin atmosphere on the lit limb.
+  const planetMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uSun: { value: sun.position }, uDay: { value: new THREE.Color() }, uNight: { value: new THREE.Color() },
+      uRim: { value: new THREE.Color() }, uLight: { value: 1 },
+    },
+    vertexShader: `
+      varying vec3 vW; varying vec3 vN;
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vW = w.xyz;
+        vN = normalize(mat3(modelMatrix) * normal);
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: `
+      uniform vec3 uSun; uniform vec3 uDay; uniform vec3 uNight; uniform vec3 uRim; uniform float uLight;
+      varying vec3 vW; varying vec3 vN;
+      void main() {
+        vec3 n = normalize(vN);
+        vec3 l = normalize(uSun - vW);
+        vec3 v = normalize(cameraPosition - vW);
+        float ndl = dot(n, l);
+        float lit = smoothstep(-0.06, 0.42, ndl) * uLight;
+        vec3 c = mix(uNight, uDay * (0.62 + 0.38 * max(ndl, 0.0)), lit);
+        float limb = pow(1.0 - max(dot(n, v), 0.0), 2.4);
+        c += uRim * limb * smoothstep(-0.3, 0.55, ndl) * uLight;
+        gl_FragColor = vec4(c, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(0.15, 64, 48), planetMat);
   scene.add(planet);
+  tickMat.uniforms.uPlanet.value = planet.position;
 
   // ------------------------------------------------------------- theme
   const theme = {};
@@ -668,12 +739,14 @@ async function fly() {
     const ground = new THREE.Color(css('--ground'));
     const ink = new THREE.Color(css('--ink'));
     const orb = new THREE.Color(css('--orbit'));
-    const gold = new THREE.Color(css('--sun'));
     renderer.setClearColor(ground, 1);
     orbitMat.color.copy(orb);
-    tickMat.color.copy(orb);
+    tickMat.uniforms.uColor.value.copy(orb);
     apsMat.color.copy(orb);
-    for (const m of [sweep, still1, still2]) m.material.color.copy(isDark ? gold : gold.clone().lerp(ink, 0.25));
+    trailMat.uniforms.uColor.value.set(isDark ? '#b9c9d8' : css('--ink'));
+    trailMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    trailMat.needsUpdate = true;
+    theme.trail = isDark ? 0.42 : 0.55;
     starMat.uniforms.uColor.value.copy(isDark ? new THREE.Color('#e9eef2') : ink);
     theme.starAlpha = isDark ? 0.95 : 0.32;
     sunMat.uniforms.uCore.value.set(isDark ? '#fff8e4' : '#fff1c8');
@@ -682,11 +755,9 @@ async function fly() {
     glowMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
     glowMat.needsUpdate = true;
     theme.glow = isDark ? 1 : 0.62;
-    planetMat.color.set(isDark ? '#9aa6b1' : '#7d8894');
-    sunLight.color.set(isDark ? '#ffe2a6' : '#fff0cc');
-    fill.color.copy(isDark ? new THREE.Color('#8fa0b3') : new THREE.Color('#ffffff'));
-    fill.intensity = isDark ? 0.32 : 0.9;
-    theme.sweep = isDark ? 0.13 : 0.16;
+    planetMat.uniforms.uDay.value.set(isDark ? '#e6dccb' : '#f6f1e6');
+    planetMat.uniforms.uNight.value.set(isDark ? '#2a323b' : '#76818c');
+    planetMat.uniforms.uRim.value.set(isDark ? '#7fb2e0' : '#8fb6d8');
     theme.ticks = isDark ? 0.42 : 0.5;
     theme.aps = isDark ? 0.22 : 0.28;
     theme.orbit = isDark ? 0.62 : 0.75;
@@ -704,8 +775,10 @@ async function fly() {
     hero1: P([-1.2, 10.0, 22.8], [0.0, -2.0, 0], 32, 0.02, 0.2),
     aph0: P([-17.6, 1.6, 2.3], [0, -0.8, -0.6], 32, 0.3, 0.24),
     aph1: P([-16.6, 1.35, 1.8], [0, -0.7, -0.45], 32, 0.3, 0.24),
-    peri0: P([19.5, 3.0, 9.6], [5.0, -0.5, -1.3], 38, -0.26, 0.2),
-    peri1: P([18.0, 2.3, 8.0], [5.3, -0.4, -0.9], 38, -0.26, 0.2),
+    // Perihelion is shot from just above the orbit, on the line through the
+    // sun: the planet crosses the sun's face as it passes closest.
+    peri0: P([22.5, 0.3, 0.0], [6, 0, 0], 26, -0.28, 0.12),
+    peri1: P([19.5, 0.26, 0.0], [6, 0, 0], 28, -0.28, 0.12),
     close: P([0.9, 37, 10.5], [0.9, 0, -1.2], 34, 0.3, 0.16),
   };
   const TALL = {
@@ -713,13 +786,18 @@ async function fly() {
     hero1: P([0, 64, 20], [0, 0, 0], 36, 0, 0.3),
     aph0: P([-18.5, 2.4, 1.6], [0, -0.6, 0], 46, 0.2, 0.3),
     aph1: P([-17.5, 2.1, 1.3], [0, -0.55, 0], 46, 0.2, 0.3),
-    peri0: P([19.5, 4.6, 11.5], [6.0, -0.5, 0.0], 52, -0.14, 0.2),
-    peri1: P([18.0, 3.8, 10.2], [6.0, -0.5, 0.2], 52, -0.14, 0.2),
+    peri0: P([23, 0.3, 0.0], [6, 0, 0], 40, 0, 0.3),
+    peri1: P([20, 0.26, 0.0], [6, 0, 0], 42, 0, 0.3),
     close: P([0.6, 84, 25], [0.6, 0, 0], 36, 0, 0.34),
   };
-  let poses = WIDE;
-  const mix = (a, b, t) => ({
-    pos: a.pos.clone().lerp(b.pos, t),
+  // The flight from aphelion to perihelion bends out around the orbit through
+  // this point, so the camera never passes through the sun.
+  const VIA = { wide: new THREE.Vector3(2, 5, 15), tall: new THREE.Vector3(2, 9, 20) };
+  let poses = WIDE, via = VIA.wide.clone();
+  const mix = (a, b, t, c) => ({
+    pos: c
+      ? a.pos.clone().multiplyScalar((1 - t) * (1 - t)).addScaledVector(c, 2 * (1 - t) * t).addScaledVector(b.pos, t * t)
+      : a.pos.clone().lerp(b.pos, t),
     at: a.at.clone().lerp(b.at, t),
     fov: lerp(a.fov, b.fov, t),
     shift: [lerp(a.shift[0], b.shift[0], t), lerp(a.shift[1], b.shift[1], t)],
@@ -728,6 +806,7 @@ async function fly() {
     const t = smooth(0.7, 1.35, aspect);
     const out = {};
     for (const k in WIDE) out[k] = mix(TALL[k], WIDE[k], t);
+    via = VIA.tall.clone().lerp(VIA.wide, t);
     return out;
   }
 
@@ -752,42 +831,52 @@ async function fly() {
   function cameraAt(y) {
     const keys = [
       [stops.hero.start, poses.hero0, 0], [stops.hero.end, poses.hero1, 1],
-      [stops.aphelion.start, poses.aph0, 0], [stops.aphelion.end, poses.aph1, 1],
+      [stops.aphelion.start, poses.aph0, 0], [stops.aphelion.end, poses.aph1, 1, via],
       [stops.perihelion.start, poses.peri0, 0], [stops.perihelion.end, poses.peri1, 1],
       [stops.close.start, poses.close, 0],
     ];
     if (y <= keys[0][0]) return keys[0][1];
     for (let i = 0; i < keys.length - 1; i++) {
-      const [y0, k0, hold] = keys[i], [y1, k1] = keys[i + 1];
+      const [y0, k0, hold, c] = keys[i], [y1, k1] = keys[i + 1];
       if (y <= y1) {
         const raw = y1 > y0 ? (y - y0) / (y1 - y0) : 1;
-        return mix(k0, k1, hold === 0 ? raw : smoother(raw));
+        return mix(k0, k1, hold === 0 ? raw : smoother(raw), c);
       }
     }
     return keys[keys.length - 1][1];
   }
 
-  // The planet. At the top it orbits on its own; once the page moves, scroll
-  // is time: the path is anchored where the planet was, so it never jumps,
-  // and reaches aphelion and perihelion as their sections hold.
+  // The planet. At the top and at the bottom it orbits on its own; in between,
+  // scroll is time. Each time it leaves its own orbit the scroll path is
+  // anchored where the planet is, so it never jumps, and it reaches aphelion
+  // and perihelion as their sections hold.
   const PERIOD = 42;
-  let ambientM = -2.35, shownM = ambientM, mode = 'ambient', mFrom = 0, cycle = 0;
   const APH_IN = Math.PI - 0.42, APH_OUT = Math.PI + 0.42;
   const PERI_IN = TAU - 0.15, PERI_OUT = TAU + 0.15, CLOSE_M = TAU + 1.25;
+  let ambientM = -2.35, shownM = ambientM, mode = 'top';
+  let mFrom = ambientM, cycle = Math.ceil((mFrom - APH_IN) / TAU) * TAU, mTo = CLOSE_M + cycle;
   function planetAt(y, dt) {
-    if (y <= stops.hero.end + 1) {
-      if (mode !== 'ambient') { ambientM = shownM; mode = 'ambient'; }
+    const where = y <= stops.hero.end + 1 ? 'top' : y >= stops.close.start - 2 ? 'bottom' : 'scroll';
+    if (where !== 'scroll') {
+      if (mode !== where) { ambientM = shownM; mode = where; }
       ambientM += (dt * TAU) / PERIOD;
       return ambientM;
     }
-    if (mode === 'ambient') {
-      mode = 'scroll';
+    if (mode === 'top') {
       mFrom = shownM;
       cycle = Math.ceil((mFrom - APH_IN) / TAU) * TAU;
+      mTo = CLOSE_M + cycle;
+    } else if (mode === 'bottom') {
+      // Back up from the end: wind the planet's count of orbits back so the
+      // path to perihelion is less than one turn (invisible: same place).
+      const turns = Math.floor((shownM - (PERI_OUT + cycle)) / TAU);
+      shownM -= turns * TAU;
+      mTo = shownM;
     }
+    mode = 'scroll';
     const keys = [
       [stops.hero.end, mFrom], [stops.aphelion.start, APH_IN + cycle], [stops.aphelion.end, APH_OUT + cycle],
-      [stops.perihelion.start, PERI_IN + cycle], [stops.perihelion.end, PERI_OUT + cycle], [stops.close.start, CLOSE_M + cycle],
+      [stops.perihelion.start, PERI_IN + cycle], [stops.perihelion.end, PERI_OUT + cycle], [stops.close.start, mTo],
     ];
     for (let i = 0; i < keys.length - 1; i++) {
       const [y0, m0] = keys[i], [y1, m1] = keys[i + 1];
@@ -803,17 +892,20 @@ async function fly() {
     perihelion: sections.perihelion.querySelector('.copy'),
     close: sections.close.querySelector('.copy'),
   };
-  function veil(el, v) {
+  // Copy arrives from a little below and leaves a little upward, out of focus
+  // at both ends.
+  function veil(el, come, go = 1) {
+    const v = come * go;
     el.style.opacity = v.toFixed(3);
     el.style.filter = v > 0.995 ? 'none' : `blur(${((1 - v) * 10).toFixed(2)}px)`;
+    const lift = ((1 - come) * 2.2 - (1 - go) * 1.6) * 16;
+    el.style.transform = Math.abs(lift) < 0.05 ? 'none' : `translate3d(0, ${lift.toFixed(2)}px, 0)`;
   }
   function scrubCopy(y) {
-    const fadeOut = 1 - smooth(stops.hero.end - 0.05 * vh, stops.hero.end + 0.42 * vh, y);
-    veil(lede, fadeOut);
+    veil(lede, 1, 1 - smooth(stops.hero.end - 0.05 * vh, stops.hero.end + 0.42 * vh, y));
     for (const k of ['aphelion', 'perihelion']) {
       const s = stops[k];
-      const v = smooth(s.start - 0.5 * vh, s.start + 0.02 * vh, y) * (1 - smooth(s.end - 0.02 * vh, s.end + 0.5 * vh, y));
-      veil(copies[k], v);
+      veil(copies[k], smooth(s.start - 0.5 * vh, s.start + 0.02 * vh, y), 1 - smooth(s.end - 0.02 * vh, s.end + 0.5 * vh, y));
     }
     veil(copies.close, smooth(stops.close.start - 0.55 * vh, stops.close.start - 0.02 * vh, y));
   }
@@ -846,6 +938,8 @@ async function fly() {
     if (!force && w === lastW && Math.abs(h - lastH) < 140) { measure(); return; }
     lastW = w; lastH = h;
     renderer.setSize(w, h, false);
+    renderer.getDrawingBufferSize(trailMat.uniforms.uRes.value);
+    trailMat.uniforms.uMinPx.value = 0.9 * renderer.getPixelRatio();
     camera.aspect = w / h;
     poses = blendPoses(camera.aspect);
     camera.updateProjectionMatrix();
@@ -925,20 +1019,22 @@ async function fly() {
     camera.projectionMatrix.elements[9] = -cam.shift[1];
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 
-    // Planet and its sweep.
+    // Planet and its trail.
     const target = planetAt(y, dt);
     shownM = lerp(shownM, target, 1 - Math.exp(-dt * 7));
     along(shownM, planet.position);
-    shape(sweep, shownM - SPAN, shownM);
-
-    // The closing figure: two equal sweeps, one at each end.
+    // Never smaller than a few pixels across, however far the camera is.
+    const pxPerUnit = (lastH / 2) / (Math.tan((camera.fov * Math.PI) / 360) * camera.position.distanceTo(planet.position));
+    const grow = Math.max(1, 2.8 / (0.15 * pxPerUnit));
+    planet.scale.setScalar(grow);
+    trailMat.uniforms.uHalf.value = 0.05 * grow;
+    trace(shownM);
+    trailMat.uniforms.uAlpha.value = theme.trail * rise;
+    planetMat.uniforms.uLight.value = rise;
     const end = smooth(stops.perihelion.end + 0.35 * vh, stops.close.start, y);
-    sweep.material.opacity = theme.sweep * rise * (1 - end);
-    still1.material.opacity = still2.material.opacity = theme.sweep * 1.1 * end;
-    planet.visible = true;
 
     orbitMat.opacity = theme.orbit;
-    tickMat.opacity = theme.ticks * smooth(1.2, 2.3, instant ? 9 : t);
+    tickMat.uniforms.uOpacity.value = theme.ticks * smooth(1.2, 2.3, instant ? 9 : t);
     apsMat.opacity = theme.aps * smooth(1.6, 2.8, instant ? 9 : t) * (0.35 + 0.65 * end);
     starMat.uniforms.uAlpha.value = theme.starAlpha * (instant ? 1 : smooth(0.0, 2.2, t));
     starMat.uniforms.uTime.value = t;
@@ -948,7 +1044,6 @@ async function fly() {
     glow.lookAt(camera.position);
     glowMat.uniforms.uLimb.value = SUN_R * s;
     glowMat.uniforms.uAlpha.value = theme.glow * rise * (1 + Math.sin(t * 0.7) * 0.03);
-    sunLight.intensity = 3.2 * rise;
 
     scrubCopy(y);
     renderer.render(scene, camera);
