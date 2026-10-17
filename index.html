@@ -2,37 +2,72 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aphelion Capital</title>
 <meta name="description" content="Aphelion Capital is a proprietary trading firm running two systematic strategies, both developed in-house.">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#e7eaec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161b21" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://siftappstudios.com/">
+<meta property="og:title" content="Aphelion Capital">
+<meta property="og:description" content="A proprietary trading firm running two systematic strategies, both developed in-house.">
+<meta property="og:image" content="https://siftappstudios.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,200..500&display=swap">
+<script>
+// Decide before first paint whether the page plays as a flight through the
+// orbit ("sky") or stays the still figure. Still when motion is unwanted, when
+// there is no WebGL, or when the scene has not started within eight seconds.
+(function () {
+  var d = document.documentElement;
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var c = document.createElement('canvas');
+    if (!(c.getContext('webgl2') || c.getContext('webgl'))) return;
+    d.classList.add('sky');
+    setTimeout(function () {
+      if (!d.classList.contains('sky-ready')) { d.classList.remove('sky', 'sky-in'); if (window.stillFigure) window.stillFigure(); }
+    }, 8000);
+  } catch (e) {}
+})();
+</script>
 <style>
 :root {
   --ground: #e7eaec;
   --ink: #27303a;
-  --soft: #6a7682;
+  --soft: #5d6976;
   --orbit: #27303a;
   --line: #b9c1c8;
   --sun: #b8964f;
   --sweep: rgba(39, 48, 58, 0.07);
+  --select: rgba(184, 150, 79, 0.32);
+  --gutter: clamp(1rem, 4.2vw, 3.5rem);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --ground: #161b21;
     --ink: #d9dfe4;
-    --soft: #8995a0;
+    --soft: #919da8;
     --orbit: #b3bcc4;
     --line: #38414a;
     --sun: #cdae68;
     --sweep: rgba(217, 223, 228, 0.07);
+    --select: rgba(205, 174, 104, 0.34);
   }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--ground);
+  scrollbar-color: var(--line) var(--ground);
+}
 body {
   margin: 0;
   min-height: 100vh;
@@ -47,18 +82,23 @@ body {
   font-size: 18px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  caret-color: var(--sun);
 }
+::selection { background: var(--select); color: var(--ink); }
 a {
   color: inherit;
   text-decoration-line: underline;
   text-decoration-color: var(--line);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
+  transition: text-decoration-color 0.25s ease;
 }
 a:hover { text-decoration-color: currentColor; }
 a:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 2px; }
 
 header {
+  position: relative;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -74,7 +114,6 @@ header {
   font-size: 1.1875rem;
   letter-spacing: 0.01em;
 }
-.firm a { text-decoration: none; }
 nav {
   display: flex;
   flex-wrap: wrap;
@@ -83,6 +122,12 @@ nav {
   font-size: 0.9375rem;
 }
 
+#sky { display: none; }
+
+/* ---------------------------------------------------------------- still */
+/* The page without motion: the orbit as a figure, the two systems hanging
+   from its ends. This is what shows with reduced motion, without WebGL, or
+   without scripts. */
 main {
   flex: 1;
   display: flex;
@@ -93,6 +138,7 @@ main {
   margin: 0 auto;
   padding: 2.5rem 1rem;
 }
+.hero .stage { display: flex; flex-direction: column; }
 .lede {
   margin: 0 auto 3rem;
   max-width: 30rem;
@@ -102,41 +148,41 @@ main {
   font-weight: 300;
   line-height: 1.35;
 }
-
 figure { margin: 0; }
-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.orbit { fill: none; stroke: var(--orbit); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
-.leader { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.sun { fill: var(--sun); }
-.planet { fill: var(--ink); }
-.sweep { fill: var(--sweep); }
+.plate svg { display: block; width: 100%; height: auto; overflow: visible; }
+.plate .orbit { fill: none; stroke: var(--orbit); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+.plate .leader { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.plate .sun { fill: var(--sun); }
+.plate .planet { fill: var(--ink); }
+.plate .sweep { fill: var(--sweep); }
 
-/* The two texts hang from the ends of the orbit: the orbit spans 600 of the
-   figure's 660 units, so each side is inset by 30/660 of the width. */
+/* The orbit spans 600 of the figure's 660 units, so each text is inset by
+   30/660 of the width to hang from its end. */
 .apsides {
   display: flex;
   justify-content: space-between;
   gap: 2rem;
   padding: 0.6rem 4.545% 0;
 }
-.apsides section { flex: 0 1 50%; }
-.apsides h2 {
+.apsis { flex: 0 1 50%; }
+.apsis h2 {
   margin: 0 0 0.35rem;
   font-size: 1.5rem;
   font-weight: 300;
   line-height: 1.15;
   letter-spacing: 0.005em;
 }
-.apsides p {
+.apsis p {
   margin: 0;
   color: var(--soft);
   font-size: 1rem;
   line-height: 1.5;
   text-wrap: pretty;
 }
-.apsides p span { display: block; }
-.apsides p .what { color: var(--ink); }
+.apsis p span { display: block; }
+.apsis p .what { color: var(--ink); }
 .perihelion { text-align: right; }
+.close .reach { display: none; }
 
 footer {
   padding: 1.5rem 1rem 2rem;
@@ -150,22 +196,126 @@ footer p { margin: 0; }
   header { padding-top: 1.25rem; }
   main { max-width: 38rem; padding-top: 1.5rem; padding-bottom: 1.5rem; }
   .lede { margin-bottom: 2rem; }
-  footer { padding: 1rem 1rem 1.5rem; }
 }
 @media (max-width: 560px) {
   body { font-size: 16px; }
   header { padding: 1.25rem 1rem 0; }
   .firm { font-size: 1.0625rem; }
   nav { font-size: 0.875rem; gap: 0.25rem 1.25rem; }
-  main { padding-top: 2.5rem; }
   .lede { font-size: 1.3125rem; margin-bottom: 2.25rem; }
   .apsides { gap: 1.25rem; }
-  .apsides h2 { font-size: 1.25rem; }
-  .apsides p { font-size: 0.9375rem; }
+  .apsis h2 { font-size: 1.25rem; }
+  .apsis p { font-size: 0.9375rem; }
+}
+
+/* ------------------------------------------------------------------ sky */
+/* The flight. The canvas sits behind everything; each part of the page is a
+   tall section whose stage sticks while the camera travels. Scrolling is time:
+   the planet keeps Kepler's pace, so it crawls at aphelion and whips round the
+   sun at perihelion. */
+html.sky body { display: block; min-height: 0; }
+html.sky #sky {
+  display: block;
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html.sky-in #sky { opacity: 1; }
+html.sky header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  max-width: none;
+  padding: 1.6rem var(--gutter) 0;
+  opacity: 0;
+  transition: opacity 1.2s ease 0.9s;
+}
+html.sky-in header { opacity: 1; }
+html.sky .plate { display: none; }
+html.sky main {
+  display: block;
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  padding: 0;
+}
+html.sky .scene { position: relative; }
+html.sky .stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  padding: 0 var(--gutter);
+}
+html.sky .hero { height: 165vh; height: 165svh; }
+html.sky .hero .stage { flex-direction: row; align-items: flex-end; padding-bottom: clamp(3rem, 11vh, 7.5rem); }
+html.sky .lede {
+  margin: 0;
+  max-width: 15.5em;
+  text-align: left;
+  font-size: clamp(2.125rem, 1rem + 3.6vw, 4.75rem);
+  font-weight: 300;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+}
+html.sky .lede .ln { display: block; overflow: hidden; padding-bottom: 0.14em; margin-bottom: -0.14em; }
+html.sky .lede .ln > span {
+  display: inline-block;
+  transform: translate3d(0, 112%, 0);
+}
+html.sky-in .lede .ln > span {
+  transform: none;
+  transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(0.55s + var(--i) * 0.11s);
+}
+
+html.sky .apsides { display: block; padding: 0; }
+html.sky .apsis { height: 250vh; height: 250svh; }
+html.sky .apsis .stage { align-items: flex-end; padding-bottom: clamp(3rem, 11vh, 7.5rem); }
+html.sky .perihelion { text-align: left; }
+html.sky .perihelion .stage { justify-content: flex-end; }
+html.sky .apsis .copy { width: min(25rem, 100%); }
+html.sky .apsis h2 {
+  margin: 0 0 1.1rem;
+  font-size: clamp(3.25rem, 1.4rem + 6.4vw, 6rem);
+  font-weight: 250;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+html.sky .apsis p { font-size: clamp(1.0625rem, 0.95rem + 0.35vw, 1.25rem); line-height: 1.5; }
+html.sky .apsis p span { display: block; }
+
+html.sky .close { height: 100vh; height: 100svh; }
+html.sky .close .stage { position: relative; flex-direction: column; justify-content: flex-end; padding-bottom: 0; }
+html.sky .close .reach {
+  display: block;
+  margin: 0;
+  font-size: clamp(1.75rem, 1rem + 2.6vw, 3.25rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+html.sky .close footer { padding: 1.4rem 0 1.75rem; text-align: left; }
+
+/* The copy is faded by the scene as the camera arrives and leaves. */
+html.sky .copy, html.sky .lede { will-change: opacity, filter; }
+
+@media (max-width: 760px) {
+  html.sky header { padding-top: 1.1rem; }
+  html.sky .apsis .stage { align-items: flex-end; padding-bottom: clamp(2.5rem, 9vh, 5rem); }
+  html.sky .perihelion .stage { justify-content: flex-start; }
+  html.sky .apsis h2 { margin-bottom: 0.7rem; }
 }
 </style>
 </head>
 <body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
 <header>
   <p class="firm">Aphelion Capital</p>
   <nav>
@@ -175,57 +325,72 @@ footer p { margin: 0; }
 </header>
 
 <main>
-  <p class="lede">A proprietary trading firm running two systematic strategies, both developed in-house.</p>
-
-  <figure>
-    <svg viewBox="-330 -128 660 280" role="img" aria-label="An orbit around the sun, with aphelion at the far end and perihelion at the near end">
-      <line class="leader" x1="-300" y1="0" x2="-300" y2="152"/>
-      <line class="leader" x1="300" y1="0" x2="300" y2="152"/>
-      <g id="sweeps"></g>
-      <ellipse class="orbit" cx="0" cy="0" rx="300" ry="120"/>
-      <circle class="sun" cx="180" cy="0" r="5.5"/>
-      <circle class="planet" id="planet" r="3.6" cx="300" cy="0"/>
-    </svg>
-  </figure>
+  <section class="scene hero" data-scene="hero">
+    <div class="stage">
+      <h1 class="lede">A proprietary trading firm running two systematic strategies, both developed in-house.</h1>
+      <figure class="plate">
+        <svg viewBox="-330 -128 660 280" role="img" aria-label="An orbit around the sun, with aphelion at the far end and perihelion at the near end">
+          <line class="leader" x1="-300" y1="0" x2="-300" y2="152"/>
+          <line class="leader" x1="300" y1="0" x2="300" y2="152"/>
+          <g id="sweeps"></g>
+          <ellipse class="orbit" cx="0" cy="0" rx="300" ry="120"/>
+          <circle class="sun" cx="180" cy="0" r="5.5"/>
+          <circle class="planet" id="planet" r="3.6" cx="300" cy="0"/>
+        </svg>
+      </figure>
+    </div>
+  </section>
 
   <div class="apsides">
-    <section>
-      <h2>Aphelion</h2>
-      <p><span class="what">Indices, currencies and commodities.</span> <span>Dozens of small positions, most held for hours.</span></p>
+    <section class="scene apsis aphelion" data-scene="aphelion" aria-labelledby="aphelion">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="aphelion">Aphelion</h2>
+          <p><span class="what">Indices, currencies and commodities.</span> <span>Dozens of small positions, most held for hours.</span></p>
+        </div>
+      </div>
     </section>
-    <section class="perihelion">
-      <h2>Perihelion</h2>
-      <p><span class="what">US stocks.</span> <span>A concentrated portfolio, rebalanced on a fixed schedule.</span></p>
+    <section class="scene apsis perihelion" data-scene="perihelion" aria-labelledby="perihelion">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="perihelion">Perihelion</h2>
+          <p><span class="what">US stocks.</span> <span>A concentrated portfolio, rebalanced on a fixed schedule.</span></p>
+        </div>
+      </div>
     </section>
   </div>
+
+  <section class="scene close" data-scene="close">
+    <div class="stage">
+      <div class="copy">
+        <p class="reach"><a href="mailto:support@siftappstudios.com">support@siftappstudios.com</a></p>
+        <footer>
+          <p>&copy; 2026 Aphelion Capital. Nothing here is an offer or advice.</p>
+        </footer>
+      </div>
+    </div>
+  </section>
 </main>
 
-<footer>
-  <p>&copy; 2026 Aphelion Capital. Nothing here is an offer or advice.</p>
-</footer>
-
 <script>
-(function () {
-  // Kepler's second law, drawn exactly. The orbit is seen at a tilt (y scaled
-  // by 0.5), and a linear map keeps ratios of area, so the shaded sweep is the
-  // same area wherever the planet is.
+// The still figure: Kepler's second law drawn exactly. The orbit is seen at a
+// tilt (y scaled by 0.5); a linear map keeps ratios of area, so the shaded
+// sweep is the same area wherever the planet is.
+window.stillFigure = function () {
+  if (window.stillFigure.done) return;
+  window.stillFigure.done = true;
   var a = 300, e = 0.6, tilt = 0.5;
   var b = a * Math.sqrt(1 - e * e) * tilt;
-  var period = 36000;          // ms for one orbit
-  var span = Math.PI / 6;      // the sweep covers a twelfth of the orbit
+  var span = Math.PI / 6;
   var NS = 'http://www.w3.org/2000/svg';
   var planet = document.getElementById('planet');
   var sweeps = document.getElementById('sweeps');
-
   function eccentric(M) {
     var E = M;
     for (var i = 0; i < 8; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
     return E;
   }
-  function at(M) {
-    var E = eccentric(M);
-    return [a * Math.cos(E), -b * Math.sin(E)];
-  }
+  function at(M) { var E = eccentric(M); return [a * Math.cos(E), -b * Math.sin(E)]; }
   function wedge(M0, M1) {
     var d = 'M' + a * e + ' 0';
     for (var i = 0; i <= 32; i++) {
@@ -245,17 +410,13 @@ footer p { margin: 0; }
     planet.setAttribute('cx', p[0].toFixed(2));
     planet.setAttribute('cy', p[1].toFixed(2));
   }
-
-  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (still.matches) {
-    // The textbook figure: two equal sweeps, one at each end.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     path().setAttribute('d', wedge(-span / 2, span / 2));
     path().setAttribute('d', wedge(Math.PI - span / 2, Math.PI + span / 2));
     place(span / 2);
     return;
   }
-  var sweep = path();
-  var start = null, M0 = -2.2;
+  var sweep = path(), start = null, period = 36000, M0 = -2.2;
   function frame(t) {
     if (start === null) start = t;
     var M = M0 + 2 * Math.PI * ((t - start) % period) / period;
@@ -264,7 +425,544 @@ footer p { margin: 0; }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-})();
+};
+if (!document.documentElement.classList.contains('sky')) window.stillFigure();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js';
+
+const root = document.documentElement;
+if (root.classList.contains('sky')) {
+  try { await fly(); }
+  catch (err) {
+    // Anything wrong with the scene: show the still page instead.
+    console.error(err);
+    root.classList.remove('sky', 'sky-in', 'sky-ready');
+    if (window.lede0) document.querySelector('.lede').textContent = window.lede0;
+    window.stillFigure();
+  }
+}
+
+async function fly() {
+  // ---------------------------------------------------------------- orbit
+  // a = 10, e = 0.6: the sun sits at the focus (6, 0, 0); perihelion is 4
+  // from it at x = +10, aphelion 16 from it at x = -10.
+  const A = 10, ECC = 0.6, B = A * Math.sqrt(1 - ECC * ECC), FX = A * ECC;
+  const TAU = Math.PI * 2;
+  const eccentric = (M) => {
+    let E = M;
+    for (let i = 0; i < 10; i++) E -= (E - ECC * Math.sin(E) - M) / (1 - ECC * Math.cos(E));
+    return E;
+  };
+  const along = (M, out = new THREE.Vector3()) => {
+    const E = eccentric(M);
+    return out.set(A * Math.cos(E), 0, -B * Math.sin(E));
+  };
+
+  // ------------------------------------------------------------ helpers
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const smoother = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+  const outExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+  const css = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+  const dark = window.matchMedia('(prefers-color-scheme: dark)');
+
+  // ----------------------------------------------------------- renderer
+  const canvas = document.getElementById('sky');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.05, 600);
+
+  // --------------------------------------------------------------- sky
+  const STARS = 1500;
+  const starPos = new Float32Array(STARS * 3), starSize = new Float32Array(STARS), starPhase = new Float32Array(STARS);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < STARS; i++) {
+    const u = rnd() * 2 - 1, th = rnd() * TAU, r = 140 + rnd() * 60, s = Math.sqrt(1 - u * u);
+    starPos.set([r * s * Math.cos(th), r * u, r * s * Math.sin(th)], i * 3);
+    const bright = rnd();
+    starSize[i] = bright > 0.965 ? 2.6 + rnd() * 1.4 : 0.9 + rnd() * 1.3;
+    starPhase[i] = rnd();
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  starGeo.setAttribute('aSize', new THREE.BufferAttribute(starSize, 1));
+  starGeo.setAttribute('aPhase', new THREE.BufferAttribute(starPhase, 1));
+  const starMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { uTime: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uColor: { value: new THREE.Color() }, uAlpha: { value: 1 } },
+    vertexShader: `
+      attribute float aSize; attribute float aPhase;
+      uniform float uTime; uniform float uPR; varying float vA;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = aSize * uPR;
+        vA = 0.62 + 0.38 * sin(uTime * (0.35 + aPhase * 0.9) + aPhase * 6.2831);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uAlpha; varying float vA;
+      void main() {
+        float r = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.05, r);
+        gl_FragColor = vec4(uColor, a * vA * uAlpha);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const stars = new THREE.Points(starGeo, starMat);
+  stars.frustumCulled = false;
+  scene.add(stars);
+
+  // ------------------------------------------------------------- orbit line
+  const N = 1024;
+  const orbitPts = new Float32Array((N + 1) * 3);
+  for (let i = 0; i <= N; i++) {
+    const E = (i / N) * TAU;
+    orbitPts.set([A * Math.cos(E), 0, -B * Math.sin(E)], i * 3);
+  }
+  const orbitGeo = new THREE.BufferGeometry();
+  orbitGeo.setAttribute('position', new THREE.BufferAttribute(orbitPts, 3));
+  const orbitMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.7, depthWrite: false });
+  const orbit = new THREE.Line(orbitGeo, orbitMat);
+  scene.add(orbit);
+
+  // Equal-time ticks: one every 1/48 of the period. They crowd where the
+  // planet is slow and spread where it is fast.
+  const TICKS = 48, tickLen = 0.32;
+  const tickPts = new Float32Array(TICKS * 6);
+  const p = new THREE.Vector3();
+  for (let k = 0; k < TICKS; k++) {
+    const E = eccentric((k / TICKS) * TAU);
+    const x = A * Math.cos(E), z = -B * Math.sin(E);
+    const nx = B * Math.cos(E), nz = -A * Math.sin(E), nl = Math.hypot(nx, nz);
+    tickPts.set([x, 0, z, x + (nx / nl) * tickLen, 0, z + (nz / nl) * tickLen], k * 6);
+  }
+  const tickGeo = new THREE.BufferGeometry();
+  tickGeo.setAttribute('position', new THREE.BufferAttribute(tickPts, 3));
+  const tickMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+  scene.add(new THREE.LineSegments(tickGeo, tickMat));
+
+  // The line of apsides, through the sun, dashed.
+  const apsGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-A, 0, 0), new THREE.Vector3(A, 0, 0)]);
+  const apsMat = new THREE.LineDashedMaterial({ transparent: true, opacity: 0, dashSize: 0.16, gapSize: 0.22, depthWrite: false });
+  const aps = new THREE.Line(apsGeo, apsMat);
+  aps.computeLineDistances();
+  scene.add(aps);
+
+  // ------------------------------------------------------------ sweeps
+  const SEG = 48;
+  const SPAN = Math.PI / 6;
+  function wedge() {
+    const pos = new Float32Array((SEG + 2) * 3);
+    const idx = [];
+    for (let i = 0; i < SEG; i++) idx.push(0, i + 1, i + 2);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setIndex(idx);
+    const m = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+    const mesh = new THREE.Mesh(g, m);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -1;
+    scene.add(mesh);
+    return mesh;
+  }
+  function shape(mesh, M0, M1) {
+    const arr = mesh.geometry.attributes.position.array;
+    arr[0] = FX; arr[1] = 0; arr[2] = 0;
+    for (let i = 0; i <= SEG; i++) {
+      along(M0 + ((M1 - M0) * i) / SEG, p);
+      arr[(i + 1) * 3] = p.x; arr[(i + 1) * 3 + 1] = 0; arr[(i + 1) * 3 + 2] = p.z;
+    }
+    mesh.geometry.attributes.position.needsUpdate = true;
+  }
+  const sweep = wedge();
+  const still1 = wedge(), still2 = wedge();
+  shape(still1, -SPAN / 2, SPAN / 2);
+  shape(still2, Math.PI - SPAN / 2, Math.PI + SPAN / 2);
+
+  // --------------------------------------------------------------- sun
+  const sunMat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uCore: { value: new THREE.Color() }, uEdge: { value: new THREE.Color() } },
+    vertexShader: `
+      varying vec3 vN; varying vec3 vP; varying vec3 vV;
+      void main() {
+        vP = position;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vV = -mv.xyz;
+        vN = normalMatrix * normal;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform float uTime; uniform vec3 uCore; uniform vec3 uEdge;
+      varying vec3 vN; varying vec3 vP; varying vec3 vV;
+      float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float noise(vec3 x) {
+        vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+                   mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+      }
+      float fbm(vec3 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.07; a *= 0.5; } return s; }
+      void main() {
+        float mu = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+        float cells = fbm(vP * 15.0 + vec3(0.0, uTime * 0.06, uTime * 0.04));
+        float broad = fbm(vP * 3.2 - vec3(uTime * 0.025));
+        // Limb darkening: hot at the centre, deeper and warmer at the edge.
+        vec3 c = mix(uEdge, uCore, pow(mu, 0.4));
+        c *= 0.94 + 0.16 * (cells - 0.5) * mu + 0.08 * (broad - 0.5);
+        gl_FragColor = vec4(c, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const SUN_R = 0.5;
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(SUN_R, 96, 64), sunMat);
+  sun.position.set(FX, 0, 0);
+  scene.add(sun);
+
+  // The glow: a camera-facing disc with a bright rim just outside the limb
+  // and a long, faint falloff. Dithered so the dark sky shows no rings.
+  const GLOW = 7;
+  const glowMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { uColor: { value: new THREE.Color() }, uAlpha: { value: 1 }, uLimb: { value: SUN_R }, uRim: { value: 0.8 }, uWide: { value: 0.22 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uAlpha; uniform float uLimb; uniform float uRim; uniform float uWide;
+      varying vec2 vUv;
+      float rand(vec2 c) { return fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453); }
+      void main() {
+        float d = length(vUv - 0.5) * 2.0 * ${GLOW.toFixed(1)};
+        float g = uRim * exp(-max(d - uLimb, 0.0) * 2.6) + uWide * exp(-d * 0.55);
+        g *= 1.0 - smoothstep(${(GLOW * 0.7).toFixed(2)}, ${GLOW.toFixed(1)}, d);
+        g = g * uAlpha + (rand(gl_FragCoord.xy) - 0.5) / 160.0;
+        gl_FragColor = vec4(uColor, clamp(g, 0.0, 1.0));
+        #include <colorspace_fragment>
+      }`,
+  });
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(GLOW * 2, GLOW * 2), glowMat);
+  glow.position.copy(sun.position);
+  glow.renderOrder = 2;
+  scene.add(glow);
+
+  const sunLight = new THREE.PointLight(0xffffff, 3.2, 0, 0);
+  sunLight.position.copy(sun.position);
+  const fill = new THREE.AmbientLight(0xffffff, 0.12);
+  scene.add(sunLight, fill);
+
+  // ------------------------------------------------------------ planet
+  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.75, metalness: 0 });
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(0.15, 48, 32), planetMat);
+  scene.add(planet);
+
+  // ------------------------------------------------------------- theme
+  const theme = {};
+  function paint() {
+    const isDark = dark.matches;
+    theme.dark = isDark;
+    const ground = new THREE.Color(css('--ground'));
+    const ink = new THREE.Color(css('--ink'));
+    const orb = new THREE.Color(css('--orbit'));
+    const gold = new THREE.Color(css('--sun'));
+    renderer.setClearColor(ground, 1);
+    orbitMat.color.copy(orb);
+    tickMat.color.copy(orb);
+    apsMat.color.copy(orb);
+    for (const m of [sweep, still1, still2]) m.material.color.copy(isDark ? gold : gold.clone().lerp(ink, 0.25));
+    starMat.uniforms.uColor.value.copy(isDark ? new THREE.Color('#e9eef2') : ink);
+    theme.starAlpha = isDark ? 0.95 : 0.32;
+    sunMat.uniforms.uCore.value.set(isDark ? '#fff8e4' : '#fff1c8');
+    sunMat.uniforms.uEdge.value.set(isDark ? '#e09b42' : '#cf8f36');
+    glowMat.uniforms.uColor.value.set(isDark ? '#e8b864' : '#d9a548');
+    glowMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    glowMat.needsUpdate = true;
+    theme.glow = isDark ? 1 : 0.62;
+    planetMat.color.set(isDark ? '#9aa6b1' : '#7d8894');
+    sunLight.color.set(isDark ? '#ffe2a6' : '#fff0cc');
+    fill.color.copy(isDark ? new THREE.Color('#8fa0b3') : new THREE.Color('#ffffff'));
+    fill.intensity = isDark ? 0.32 : 0.9;
+    theme.sweep = isDark ? 0.13 : 0.16;
+    theme.ticks = isDark ? 0.42 : 0.5;
+    theme.aps = isDark ? 0.22 : 0.28;
+    theme.orbit = isDark ? 0.62 : 0.75;
+  }
+  paint();
+  dark.addEventListener('change', paint);
+
+  // ----------------------------------------------------------- camera path
+  // Two framings, wide and tall, blended by the window's aspect.
+  // Each pose: where the camera is, what it looks at, its field of view, and a
+  // lens shift (in screen halves) that slides the picture off the copy.
+  const P = (pos, at, fov, sx = 0, sy = 0) => ({ pos: new THREE.Vector3(...pos), at: new THREE.Vector3(...at), fov, shift: [sx, sy] });
+  const WIDE = {
+    hero0: P([-0.2, 11.6, 25.5], [0.0, -2.2, 0], 32, 0.02, 0.2),
+    hero1: P([-1.2, 10.0, 22.8], [0.0, -2.0, 0], 32, 0.02, 0.2),
+    aph0: P([-17.6, 1.6, 2.3], [0, -0.8, -0.6], 32, 0.3, 0.24),
+    aph1: P([-16.6, 1.35, 1.8], [0, -0.7, -0.45], 32, 0.3, 0.24),
+    peri0: P([19.5, 3.0, 9.6], [5.0, -0.5, -1.3], 38, -0.26, 0.2),
+    peri1: P([18.0, 2.3, 8.0], [5.3, -0.4, -0.9], 38, -0.26, 0.2),
+    close: P([0.9, 37, 10.5], [0.9, 0, -1.2], 34, 0.3, 0.16),
+  };
+  const TALL = {
+    hero0: P([0, 70, 22], [0, 0, 0], 36, 0, 0.3),
+    hero1: P([0, 64, 20], [0, 0, 0], 36, 0, 0.3),
+    aph0: P([-18.5, 2.4, 1.6], [0, -0.6, 0], 46, 0.2, 0.3),
+    aph1: P([-17.5, 2.1, 1.3], [0, -0.55, 0], 46, 0.2, 0.3),
+    peri0: P([19.5, 4.6, 11.5], [6.0, -0.5, 0.0], 52, -0.14, 0.2),
+    peri1: P([18.0, 3.8, 10.2], [6.0, -0.5, 0.2], 52, -0.14, 0.2),
+    close: P([0.6, 84, 25], [0.6, 0, 0], 36, 0, 0.34),
+  };
+  let poses = WIDE;
+  const mix = (a, b, t) => ({
+    pos: a.pos.clone().lerp(b.pos, t),
+    at: a.at.clone().lerp(b.at, t),
+    fov: lerp(a.fov, b.fov, t),
+    shift: [lerp(a.shift[0], b.shift[0], t), lerp(a.shift[1], b.shift[1], t)],
+  });
+  function blendPoses(aspect) {
+    const t = smooth(0.7, 1.35, aspect);
+    const out = {};
+    for (const k in WIDE) out[k] = mix(TALL[k], WIDE[k], t);
+    return out;
+  }
+
+  // ---------------------------------------------------------- page stops
+  const sections = {};
+  for (const el of document.querySelectorAll('[data-scene]')) sections[el.dataset.scene] = el;
+  const stops = {};
+  let vh = 1, maxY = 1;
+  function measure() {
+    vh = window.innerHeight;
+    maxY = Math.max(1, document.documentElement.scrollHeight - vh);
+    for (const k in sections) {
+      const r = sections[k].getBoundingClientRect();
+      const top = r.top + window.scrollY;
+      stops[k] = { start: top, end: Math.max(top, top + r.height - vh) };
+    }
+    stops.close.start = stops.close.end = maxY;
+  }
+
+  // Camera keys along the page, each a scroll position and a pose. Holds are
+  // linear (a slow push), flights between sections ease in and out.
+  function cameraAt(y) {
+    const keys = [
+      [stops.hero.start, poses.hero0, 0], [stops.hero.end, poses.hero1, 1],
+      [stops.aphelion.start, poses.aph0, 0], [stops.aphelion.end, poses.aph1, 1],
+      [stops.perihelion.start, poses.peri0, 0], [stops.perihelion.end, poses.peri1, 1],
+      [stops.close.start, poses.close, 0],
+    ];
+    if (y <= keys[0][0]) return keys[0][1];
+    for (let i = 0; i < keys.length - 1; i++) {
+      const [y0, k0, hold] = keys[i], [y1, k1] = keys[i + 1];
+      if (y <= y1) {
+        const raw = y1 > y0 ? (y - y0) / (y1 - y0) : 1;
+        return mix(k0, k1, hold === 0 ? raw : smoother(raw));
+      }
+    }
+    return keys[keys.length - 1][1];
+  }
+
+  // The planet. At the top it orbits on its own; once the page moves, scroll
+  // is time: the path is anchored where the planet was, so it never jumps,
+  // and reaches aphelion and perihelion as their sections hold.
+  const PERIOD = 42;
+  let ambientM = -2.35, shownM = ambientM, mode = 'ambient', mFrom = 0, cycle = 0;
+  const APH_IN = Math.PI - 0.42, APH_OUT = Math.PI + 0.42;
+  const PERI_IN = TAU - 0.15, PERI_OUT = TAU + 0.15, CLOSE_M = TAU + 1.25;
+  function planetAt(y, dt) {
+    if (y <= stops.hero.end + 1) {
+      if (mode !== 'ambient') { ambientM = shownM; mode = 'ambient'; }
+      ambientM += (dt * TAU) / PERIOD;
+      return ambientM;
+    }
+    if (mode === 'ambient') {
+      mode = 'scroll';
+      mFrom = shownM;
+      cycle = Math.ceil((mFrom - APH_IN) / TAU) * TAU;
+    }
+    const keys = [
+      [stops.hero.end, mFrom], [stops.aphelion.start, APH_IN + cycle], [stops.aphelion.end, APH_OUT + cycle],
+      [stops.perihelion.start, PERI_IN + cycle], [stops.perihelion.end, PERI_OUT + cycle], [stops.close.start, CLOSE_M + cycle],
+    ];
+    for (let i = 0; i < keys.length - 1; i++) {
+      const [y0, m0] = keys[i], [y1, m1] = keys[i + 1];
+      if (y <= y1) return lerp(m0, m1, y1 > y0 ? clamp((y - y0) / (y1 - y0)) : 1);
+    }
+    return keys[keys.length - 1][1];
+  }
+
+  // ---------------------------------------------------------------- copy
+  const lede = document.querySelector('.lede');
+  const copies = {
+    aphelion: sections.aphelion.querySelector('.copy'),
+    perihelion: sections.perihelion.querySelector('.copy'),
+    close: sections.close.querySelector('.copy'),
+  };
+  function veil(el, v) {
+    el.style.opacity = v.toFixed(3);
+    el.style.filter = v > 0.995 ? 'none' : `blur(${((1 - v) * 10).toFixed(2)}px)`;
+  }
+  function scrubCopy(y) {
+    const fadeOut = 1 - smooth(stops.hero.end - 0.05 * vh, stops.hero.end + 0.42 * vh, y);
+    veil(lede, fadeOut);
+    for (const k of ['aphelion', 'perihelion']) {
+      const s = stops[k];
+      const v = smooth(s.start - 0.5 * vh, s.start + 0.02 * vh, y) * (1 - smooth(s.end - 0.02 * vh, s.end + 0.5 * vh, y));
+      veil(copies[k], v);
+    }
+    veil(copies.close, smooth(stops.close.start - 0.55 * vh, stops.close.start - 0.02 * vh, y));
+  }
+
+  // Split the lede into lines for its entrance; put the plain text back once
+  // it has landed so it can reflow freely.
+  async function splitLede() {
+    try { await document.fonts.ready; } catch (e) {}
+    const text = lede.textContent.trim().replace(/\s+/g, ' ');
+    window.lede0 = text;
+    lede.setAttribute('aria-label', text);
+    lede.innerHTML = text.split(' ').map((w) => `<span class="w">${w}</span>`).join(' ');
+    const lines = [];
+    let last = null;
+    for (const w of lede.querySelectorAll('.w')) {
+      if (last === null || Math.abs(w.offsetTop - last) > 2) { lines.push([]); last = w.offsetTop; }
+      lines[lines.length - 1].push(w.textContent);
+    }
+    lede.innerHTML = lines.map((l, i) => `<span class="ln" aria-hidden="true" style="--i:${i}"><span>${l.join(' ')}</span></span>`).join('');
+    const total = 550 + (lines.length - 1) * 110 + 1500;
+    setTimeout(() => { lede.textContent = text; lede.removeAttribute('aria-label'); }, total + 100);
+  }
+
+  // -------------------------------------------------------------- sizing
+  let lastW = 0, lastH = 0;
+  function resize(force) {
+    const w = canvas.clientWidth || window.innerWidth;
+    const h = canvas.clientHeight || window.innerHeight;
+    // Phones change height as the address bar slides; ignore small changes.
+    if (!force && w === lastW && Math.abs(h - lastH) < 140) { measure(); return; }
+    lastW = w; lastH = h;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    poses = blendPoses(camera.aspect);
+    camera.updateProjectionMatrix();
+    measure();
+  }
+  window.addEventListener('resize', () => resize(false));
+
+  // -------------------------------------------------------------- scroll
+  let lenis = null;
+  if (window.Lenis) {
+    lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 0.9 });
+  } else {
+    window.addEventListener('load', () => {
+      if (window.Lenis && !lenis) lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 0.9 });
+    }, { once: true });
+  }
+  const scrollY = () => (lenis ? lenis.scroll : window.scrollY);
+
+  // Pointer: a little parallax, never more than a fraction of a unit.
+  const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+  }, { passive: true });
+
+  // ---------------------------------------------------------------- loop
+  resize(true);
+  await splitLede();
+  measure();
+
+  const cam = { pos: new THREE.Vector3(), at: new THREE.Vector3(), fov: 34, shift: [0, 0] };
+  const first = cameraAt(scrollY());
+  cam.pos.copy(first.pos); cam.at.copy(first.at); cam.fov = first.fov; cam.shift = first.shift.slice();
+  shownM = planetAt(scrollY(), 0);
+
+  let t0 = null, tPrev = 0;
+  const q = new URLSearchParams(location.search);
+  const instant = q.has('still');           // screenshots: skip the entrance
+  if (q.has('debug')) {
+    window.__sky = { WIDE, TALL, P, set: (k, wide, pose) => { (wide ? WIDE : TALL)[k] = pose; poses = blendPoses(camera.aspect); } };
+  }
+  const look = new THREE.Vector3();
+  const sway = new THREE.Vector3();
+
+  function frame(now) {
+    if (t0 === null) { t0 = now; tPrev = now; }
+    const t = (now - t0) / 1000;
+    const dt = Math.min(0.05, (now - tPrev) / 1000);
+    tPrev = now;
+    if (lenis) lenis.raf(now);
+    const y = scrollY();
+
+    // Entrance: the orbit is traced, the sun comes up, the marks follow.
+    const intro = instant ? 1 : clamp(t / 2.4);
+    const draw = instant ? 1 : outExpo(clamp((t - 0.15) / 2.1));
+    orbitGeo.setDrawRange(0, Math.max(2, Math.floor(draw * (N + 1))));
+    const rise = instant ? 1 : outExpo(clamp((t - 0.1) / 1.6));
+
+    // Camera: chase the pose for this scroll position.
+    const goal = cameraAt(y);
+    const k = 1 - Math.exp(-dt * 5.5);
+    cam.pos.lerp(goal.pos, k);
+    cam.at.lerp(goal.at, k);
+    cam.fov = lerp(cam.fov, goal.fov, k);
+    cam.shift[0] = lerp(cam.shift[0], goal.shift[0], k);
+    cam.shift[1] = lerp(cam.shift[1], goal.shift[1], k);
+    pointer.sx = lerp(pointer.sx, pointer.x, 1 - Math.exp(-dt * 3));
+    pointer.sy = lerp(pointer.sy, pointer.y, 1 - Math.exp(-dt * 3));
+    sway.set(Math.sin(t * 0.11) * 0.35 + pointer.sx * 0.55, Math.sin(t * 0.083 + 1.3) * 0.22 - pointer.sy * 0.35, 0);
+    camera.position.copy(cam.pos).add(sway);
+    look.copy(cam.at);
+    camera.lookAt(look);
+    camera.fov = cam.fov;
+    camera.updateProjectionMatrix();
+    // Lens shift: slide the picture without turning the camera.
+    camera.projectionMatrix.elements[8] = -cam.shift[0];
+    camera.projectionMatrix.elements[9] = -cam.shift[1];
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+
+    // Planet and its sweep.
+    const target = planetAt(y, dt);
+    shownM = lerp(shownM, target, 1 - Math.exp(-dt * 7));
+    along(shownM, planet.position);
+    shape(sweep, shownM - SPAN, shownM);
+
+    // The closing figure: two equal sweeps, one at each end.
+    const end = smooth(stops.perihelion.end + 0.35 * vh, stops.close.start, y);
+    sweep.material.opacity = theme.sweep * rise * (1 - end);
+    still1.material.opacity = still2.material.opacity = theme.sweep * 1.1 * end;
+    planet.visible = true;
+
+    orbitMat.opacity = theme.orbit;
+    tickMat.opacity = theme.ticks * smooth(1.2, 2.3, instant ? 9 : t);
+    apsMat.opacity = theme.aps * smooth(1.6, 2.8, instant ? 9 : t) * (0.35 + 0.65 * end);
+    starMat.uniforms.uAlpha.value = theme.starAlpha * (instant ? 1 : smooth(0.0, 2.2, t));
+    starMat.uniforms.uTime.value = t;
+    sunMat.uniforms.uTime.value = t;
+    const s = 0.2 + 0.8 * rise;
+    sun.scale.setScalar(s);
+    glow.lookAt(camera.position);
+    glowMat.uniforms.uLimb.value = SUN_R * s;
+    glowMat.uniforms.uAlpha.value = theme.glow * rise * (1 + Math.sin(t * 0.7) * 0.03);
+    sunLight.intensity = 3.2 * rise;
+
+    scrubCopy(y);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  root.classList.add('sky-ready');
+  requestAnimationFrame(() => root.classList.add('sky-in'));
+  if (instant) {
+    root.classList.add('sky-in');
+    lede.textContent = window.lede0;
+  }
+  window.addEventListener('load', () => resize(true));
+}
 </script>
 </body>
 </html>
