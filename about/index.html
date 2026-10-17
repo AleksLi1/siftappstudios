@@ -538,8 +538,9 @@ html.live .text { padding-bottom: 2rem; }
 // it: its dots drain out of the picture, bounce left or right at every number
 // and settle in the slots below, where the heaps take the shape of the bell
 // curve, laid down in the painting's own colours. At the last paragraph the
-// dots fly home and the storm is calmer. Scroll is time: scrolling back runs
-// it all in reverse.
+// dots fly home, and where they land they swell into the painting itself, in
+// its true colours, until the print is gone and only the painting is left.
+// Scroll is time: scrolling back runs it all in reverse.
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js';
 
 const root = document.documentElement;
@@ -705,7 +706,7 @@ async function figure() {
       uniform float uTime, uIntro, uStorm, uCell, uBead, uClear, uDark, uPour, uBack, uDpr;
       uniform vec3 uCam; uniform vec2 uView;
       uniform vec3 uRock; uniform vec3 uPush; uniform vec4 uRing;
-      varying vec3 vCol; varying float vR; varying float vPx;
+      varying vec3 vCol; varying float vR; varying float vPx; varying float vA;
       const float DX = ${DX}.0, DY = ${DY}.0, APEX = ${APEX}.0, TF = ${TF};
       const vec2 PIVOT = vec2(505.0, 319.0);
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -778,6 +779,9 @@ async function figure() {
           w = iv * iv * iv * aSlot + 3.0 * iv * iv * k * c1 + 3.0 * iv * k * k * c2 + k * k * k * homeW;
           m = 1.0 - smoothstep(0.8, 1.0, u);
         }
+        // Once the painting has grown over it, the dot goes.
+        float home = aFly.w + 0.4;
+        vA = 1.0 - smoothstep(home + 0.15, home + 0.2, uBack);
 
         // ---- The pointer parts the dots; a tap sends a ring out.
         float z = uCam.z;
@@ -805,16 +809,88 @@ async function figure() {
         vCol = clamp(mix(ink, sand, m), 0.0, 1.0);
       }`,
     fragmentShader: `
-      varying vec3 vCol; varying float vR; varying float vPx;
+      varying vec3 vCol; varying float vR; varying float vPx; varying float vA;
       void main() {
         float dpx = length(gl_PointCoord - 0.5) * vPx;
-        float a = clamp(vR + 0.5 - dpx, 0.0, 1.0) * clamp(vR * 2.0, 0.0, 1.0);
+        float a = clamp(vR + 0.5 - dpx, 0.0, 1.0) * clamp(vR * 2.0, 0.0, 1.0) * vA;
         if (a < 0.01) discard;
         gl_FragColor = vec4(vCol, a);
       }`,
   }));
   dots.frustumCulled = false;
   scene.add(dots);
+
+  // ---------------------------------------------------------------- the painting itself
+  // When each patch of the print is home, its dots swell into the painting,
+  // in its true colours, until they meet. A small map says when each patch is
+  // home: the same order the dots fly back in, the top and the sides first.
+  const keyS = Float32Array.from(key).sort();
+  const rankOf = (k) => {
+    let lo = 0, hi = n;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (keyS[mid] < k) lo = mid + 1; else hi = mid; }
+    return lo / n;
+  };
+  const mw = 72, mh = 90, mc = document.createElement('canvas');
+  mc.width = mw; mc.height = mh;
+  const mg = mc.getContext('2d'), md = mg.createImageData(mw, mh);
+  for (let y = 0; y < mh; y++) {
+    for (let x = 0; x < mw; x++) {
+      const hx = (x + 0.5) / mw * W, hy = H - (y + 0.5) / mh * H;
+      const k = hy + 0.35 * Math.abs(hx - W / 2) + (vnoise(hx * 0.011, hy * 0.011) - 0.5) * 170;
+      const v = Math.round(255 * (0.6 * (1 - rankOf(k)) + 0.4)), o = (y * mw + x) * 4;
+      md.data[o] = md.data[o + 1] = md.data[o + 2] = v;
+      md.data[o + 3] = 255;
+    }
+  }
+  mg.putImageData(md, 0, 0);
+  const homeTex = new THREE.CanvasTexture(mc);
+  homeTex.generateMipmaps = false;
+  homeTex.minFilter = THREE.LinearFilter;
+  // The colours go to the screen exactly as they are in the file.
+  const photo = (img) => { const t = new THREE.Texture(img); t.needsUpdate = true; return t; };
+  const uReal = { uPhoto: { value: photo(paint) }, uHome: { value: homeTex } };
+  load('storm-1600.jpg').then((img) => {
+    const old = uReal.uPhoto.value;
+    uReal.uPhoto.value = photo(img);
+    old.dispose();
+  }).catch(() => {});
+  const real = new THREE.Mesh(new THREE.PlaneGeometry(W, H).translate(0, H / 2, 0), new THREE.ShaderMaterial({
+    uniforms: { ...u, ...uReal },
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    vertexShader: `
+      uniform vec3 uCam; uniform vec2 uView;
+      varying vec2 vHome;
+      void main() {
+        vHome = position.xy + vec2(${(W / 2).toFixed(1)}, 0.0);
+        gl_Position = vec4((position.xy - uCam.xy) / (uCam.z * 0.5 * uView), 0.0, 1.0);
+      }`,
+    fragmentShader: `
+      uniform sampler2D uPhoto, uHome; uniform float uBack, uCell, uIntro;
+      varying vec2 vHome;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main() {
+        vec2 uv = vHome / vec2(${W.toFixed(1)}, ${H.toFixed(1)});
+        float home = texture2D(uHome, uv).r;
+        // Distance to the nearest dot of the screen, in screen cells.
+        vec2 g = vec2(vHome.x - ${(W / 2).toFixed(1)}, ${(H / 2).toFixed(1)} - vHome.y) / (0.70710678 * uCell);
+        vec2 ij = 0.5 * vec2(g.x + g.y, g.y - g.x), c = floor(ij + 0.5);
+        float d = length(ij - c);
+        float t0 = home + 0.02 + 0.06 * hash(c);
+        float rv = smoothstep(t0, t0 + 0.1, uBack);
+        // Grown, a disc reaches past the corners of its cell, so nothing shows between.
+        float fw = max(fwidth(d), 1e-4);
+        float a = rv > 0.999 ? 1.0 : clamp((rv * (0.7072 + 1.5 * fw) - d) / fw + 0.5, 0.0, 1.0) * min(1.0, rv * 30.0);
+        a *= smoothstep(0.0, 0.6, uIntro);
+        if (a < 0.004) discard;
+        // The photograph's top few rows carry a bright scan blemish; leave them out.
+        gl_FragColor = vec4(texture2D(uPhoto, vec2(uv.x, uv.y * 0.9965)).rgb, a);
+      }`,
+  }));
+  real.frustumCulled = false;
+  real.renderOrder = 1;
+  scene.add(real);
 
   // ---------------------------------------------------------------- the board
   // Drawn as vectors over the dots, in the same world, so the numbers stay sharp.
@@ -890,7 +966,7 @@ async function figure() {
     if (s < 2.22) return K[1];
     if (s < 2.62) return mixCam(K[1], K[2], ease((s - 2.22) / 0.4));
     if (s < 3.15) return K[2];
-    return mixCam(K[2], K[0], ease((s - 3.15) / 0.8));
+    return mixCam(K[2], K[0], ease((s - 3.15) / 0.65));
   }
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -973,13 +1049,19 @@ async function figure() {
     u.uTime.value = t;
     u.uIntro.value = t;
     u.uPour.value = clamp01((s - 2.0) / 0.95);
-    u.uBack.value = clamp01((s - 3.15) / 0.8);
+    // Past 1 the last dots are home and the painting grows over them; by 1.2 it is whole.
+    const back = Math.max(0, (s - 3.15) / 0.65);
+    u.uBack.value = back;
+    dots.visible = back < 1.2;
+    real.visible = back > 0.4;
     const cam = camAt(s);
     u.uCam.value.set(cam[0], cam[1], cam[2]);
     const bw = vw * cam[2], bh = vh * cam[2];
     svg.setAttribute('viewBox', `${(cam[0] - bw / 2).toFixed(2)} ${(-cam[1] - bh / 2).toFixed(2)} ${bw.toFixed(2)} ${bh.toFixed(2)}`);
 
-    const fade = 1 - 0.65 * smooth(3.3, 3.95, s);
+    // Nothing is left over the painting at the end: the board and the plate mark go.
+    const fade = 1 - smooth(3.3, 3.9, s);
+    set(mark, 'opacity', 1 - smooth(3.65, 3.9, s));
     set(neck, 'opacity', smooth(0.85, 1.25, s) * (1 - smooth(3.3, 3.9, s)));
     rows.forEach((r, k) => {
       const v = smooth(1.0 + 0.06 * k, 1.14 + 0.06 * k, s);
@@ -1013,7 +1095,7 @@ async function figure() {
   requestAnimationFrame(frameLoop);
   canvas.removeAttribute('aria-hidden');
   canvas.setAttribute('role', 'img');
-  canvas.setAttribute('aria-label', 'The painting drawn in coloured dots. As the page scrolls, the dots pour down through Pascal’s triangle, pile up in the shape of the bell curve, and fly back into the painting.');
+  canvas.setAttribute('aria-label', 'The painting drawn in coloured dots. As the page scrolls, the dots pour down through Pascal’s triangle, pile up in the shape of the bell curve, and fly back to become the painting again, in its own colours.');
   root.classList.add('plate-ready');
 }
 </script>
