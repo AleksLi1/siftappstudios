@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aphelion Capital</title>
-<meta name="description" content="Aphelion Capital is a proprietary trading firm. It trades equity indices, currencies and commodities with systematic strategies developed in-house.">
+<meta name="description" content="Aphelion Capital is a proprietary trading firm running two systematic strategies, both developed in-house.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,8 +44,8 @@ body {
   font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
   font-optical-sizing: auto;
   font-weight: 400;
-  font-size: 19px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 a {
@@ -81,24 +81,55 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
   width: 100%;
-  max-width: 36rem;
+  max-width: 42rem;
   margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 2.5rem 1rem;
 }
-figure { margin: 0 0 3rem; width: 100%; max-width: 24rem; }
+.lede {
+  margin: 0 auto 3rem;
+  max-width: 30rem;
+  text-align: center;
+  text-wrap: balance;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1.35;
+}
+
+figure { margin: 0; }
 svg { display: block; width: 100%; height: auto; overflow: visible; }
 .orbit { fill: none; stroke: var(--orbit); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+.leader { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .sun { fill: var(--sun); }
 .planet { fill: var(--ink); }
 .sweep { fill: var(--sweep); }
 
-main p {
-  margin: 0;
+/* The two texts hang from the ends of the orbit: the orbit spans 600 of the
+   figure's 660 units, so each side is inset by 30/660 of the width. */
+.apsides {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0.6rem 4.545% 0;
+}
+.apsides section { flex: 0 1 50%; }
+.apsides h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
   font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+}
+.apsides p {
+  margin: 0;
+  color: var(--soft);
+  font-size: 1rem;
+  line-height: 1.5;
   text-wrap: pretty;
 }
+.apsides p span { display: block; }
+.apsides p .what { color: var(--ink); }
+.perihelion { text-align: right; }
 
 footer {
   padding: 1.5rem 1rem 2rem;
@@ -108,12 +139,22 @@ footer {
 }
 footer p { margin: 0; }
 
+@media (max-height: 760px) {
+  header { padding-top: 1.25rem; }
+  main { max-width: 38rem; padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .lede { margin-bottom: 2rem; }
+  footer { padding: 1rem 1rem 1.5rem; }
+}
 @media (max-width: 560px) {
-  body { font-size: 17px; }
+  body { font-size: 16px; }
   header { padding: 1.25rem 1rem 0; }
   .firm { font-size: 1.0625rem; }
   .contact { font-size: 0.875rem; }
-  figure { margin-bottom: 2.25rem; max-width: 18rem; }
+  main { padding-top: 2.5rem; }
+  .lede { font-size: 1.3125rem; margin-bottom: 2.25rem; }
+  .apsides { gap: 1.25rem; }
+  .apsides h2 { font-size: 1.25rem; }
+  .apsides p { font-size: 0.9375rem; }
 }
 </style>
 </head>
@@ -124,18 +165,29 @@ footer p { margin: 0; }
 </header>
 
 <main>
+  <p class="lede">A proprietary trading firm running two systematic strategies, both developed in-house.</p>
+
   <figure>
-    <svg viewBox="-306 -126 612 252" role="img" aria-label="An orbit around the sun">
+    <svg viewBox="-330 -128 660 280" role="img" aria-label="An orbit around the sun, with aphelion at the far end and perihelion at the near end">
+      <line class="leader" x1="-300" y1="0" x2="-300" y2="152"/>
+      <line class="leader" x1="300" y1="0" x2="300" y2="152"/>
       <g id="sweeps"></g>
       <ellipse class="orbit" cx="0" cy="0" rx="300" ry="120"/>
-      <circle class="sun" cx="180" cy="0" r="7"/>
-      <circle class="planet" id="planet" r="4.5" cx="300" cy="0"/>
+      <circle class="sun" cx="180" cy="0" r="5.5"/>
+      <circle class="planet" id="planet" r="3.6" cx="300" cy="0"/>
     </svg>
   </figure>
 
-  <p>Aphelion Capital is a proprietary trading firm, named after the point in an orbit farthest from the sun. We trade
-  equity indices, currencies and commodities with systematic strategies developed in-house. Each strategy is a short
-  set of written rules, with no machine learning and no discretion.</p>
+  <div class="apsides">
+    <section>
+      <h2>Aphelion</h2>
+      <p><span class="what">Indices, currencies and commodities.</span> <span>Dozens of small positions, most held for hours.</span></p>
+    </section>
+    <section class="perihelion">
+      <h2>Perihelion</h2>
+      <p><span class="what">US stocks.</span> <span>A concentrated portfolio, rebalanced on a fixed schedule.</span></p>
+    </section>
+  </div>
 </main>
 
 <footer>
@@ -186,9 +238,10 @@ footer p { margin: 0; }
 
   var still = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (still.matches) {
-    // The planet held at aphelion, with the sweep that ends there.
-    path().setAttribute('d', wedge(Math.PI - span, Math.PI));
-    place(Math.PI);
+    // The textbook figure: two equal sweeps, one at each end.
+    path().setAttribute('d', wedge(-span / 2, span / 2));
+    path().setAttribute('d', wedge(Math.PI - span / 2, Math.PI + span / 2));
+    place(span / 2);
     return;
   }
   var sweep = path();
