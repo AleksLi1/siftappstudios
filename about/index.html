@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About · Aphelion Capital</title>
+<meta name="description" content="Why Aphelion Capital takes risk, and what that does for the markets it trades.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap">
+<style>
+:root {
+  --ground: #e7eaec;
+  --ink: #27303a;
+  --soft: #6a7682;
+  --line: #b9c1c8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #161b21;
+    --ink: #d9dfe4;
+    --soft: #8995a0;
+    --line: #38414a;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+a:hover { text-decoration-color: currentColor; }
+a:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 2px; }
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.75rem 2rem 0;
+}
+.firm {
+  margin: 0;
+  font-size: 1.1875rem;
+  letter-spacing: 0.01em;
+}
+.firm a { text-decoration: none; }
+.firm a:hover { text-decoration: underline; text-decoration-color: var(--line); }
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  color: var(--soft);
+  font-size: 0.9375rem;
+}
+nav a[aria-current] { color: var(--ink); text-decoration: none; }
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 14vh, 8rem) 1.25rem 3rem;
+}
+h1 {
+  margin: 0 0 1.75rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: 0.005em;
+}
+main p {
+  margin: 0 0 1.15em;
+  font-size: 1.1875rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+  hanging-punctuation: first;
+}
+main p:last-child { margin-bottom: 0; }
+
+footer {
+  padding: 1.5rem 1rem 2rem;
+  text-align: center;
+  color: var(--soft);
+  font-size: 0.8125rem;
+}
+footer p { margin: 0; }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  header { padding: 1.25rem 1rem 0; }
+  .firm { font-size: 1.0625rem; }
+  nav { font-size: 0.875rem; gap: 0.25rem 1.25rem; }
+  main { padding-top: 3rem; }
+  h1 { font-size: 1.3125rem; margin-bottom: 1.25rem; }
+  main p { font-size: 1.0625rem; line-height: 1.6; }
+}
+</style>
+</head>
+<body>
+<header>
+  <p class="firm"><a href="../">Aphelion Capital</a></p>
+  <nav>
+    <a href="./" aria-current="page">About</a>
+    <a href="mailto:support@siftappstudios.com">support@siftappstudios.com</a>
+  </nav>
+</header>
+
+<main>
+  <h1>About</h1>
+
+  <p>For most of history the future was left to the gods. Peter Bernstein&rsquo;s <em>Against the Gods</em> tells how people learned to measure risk and then to trade it. The word comes from the early Italian <em>risicare</em>, to dare. In his words, &ldquo;risk is a choice rather than a fate.&rdquo;</p>
+
+  <p>Markets depend on people who make that choice. An airline buys its fuel a year ahead, and an exporter sells dollars it has not yet been paid. Each gives up a little to know its costs, and whoever takes the other side is paid for carrying the uncertainty.</p>
+
+  <p>Prices also stray from what is known. A trader who buys what is too cheap and sells what is too dear is paid for the correction, and the price is more accurate for everyone who trades after.</p>
+
+  <p>Aphelion Capital takes these risks with its own money, in liquid markets. Every position is sized so that no single loss can decide the firm&rsquo;s future.</p>
+</main>
+
+<footer>
+  <p>&copy; 2026 Aphelion Capital. Nothing here is an offer or advice.</p>
+</footer>
+</body>
+</html>
