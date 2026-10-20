@@ -1,0 +1,1698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- The first sha256 in script-src and in style-src is of this page's own inline script and style block. After editing either block, recompute them:
+     python3 -c "import re,hashlib,base64;s=open('tools/dashboard.html').read();[print(base64.b64encode(hashlib.sha256(m.encode()).digest()).decode()) for m in re.findall(r'<(?:style|script)>(.*?)</(?:style|script)>',s,re.S)]"
+     The first printed value is the style's, the second the script's.
+     The other two style-src hashes are Google's sign-in script's: the button stylesheet it injects and a style="position: relative;"
+     attribute (hence 'unsafe-hashes'). If Google changes either, the button still draws and the console reports the blocked style. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/ulVvDW+9GV2DluSBhMtKbJaz1/h7bTJw0KCcwd6h9U=' https://accounts.google.com/gsi/client; style-src 'sha256-MKXwg/jOvDhBoB+GJj0bjugSopxwk749TWeARgRcet0=' 'sha256-RU4sU0AaS8IBGZx8XrGt/pa9A5SLA3dQszGeqT5L3Kw=' 'unsafe-hashes' 'sha256-qhuPdMIyitsie5l+rVqi1rLMM5kKX8GH2i6ece7IvkY=' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src data: https://*.googleusercontent.com; connect-src 'self' https://bot.siftappstudios.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard · Aphelion Capital</title>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#e7eaec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161b21" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,200..500&display=swap">
+<style>
+:root {
+  --ground: #e7eaec;
+  --ink: #27303a;
+  --soft: #5d6976;
+  --line: #b9c1c8;
+  --hair: #d2d8dd;
+  --track: #d3d9de;
+  --sun: #b8964f;
+  --bt: #8c6d2c;
+  --ok: #3c7357;
+  --warn: #8a5a12;
+  --bad: #a3352c;
+  --band-out: rgba(93, 105, 118, 0.14);
+  --band-in: rgba(93, 105, 118, 0.3);
+  --select: rgba(184, 150, 79, 0.32);
+  --gutter: clamp(1rem, 4.2vw, 3.5rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #161b21;
+    --ink: #d9dfe4;
+    --soft: #919da8;
+    --line: #38414a;
+    --hair: #262d35;
+    --track: #262e36;
+    --sun: #cdae68;
+    --bt: #cdae68;
+    --ok: #7db897;
+    --warn: #d9a44e;
+    --bad: #ee8577;
+    --band-out: rgba(145, 157, 168, 0.13);
+    --band-in: rgba(145, 157, 168, 0.27);
+    --select: rgba(205, 174, 104, 0.34);
+  }
+}
+@media (max-width: 560px) { :root { --gutter: 16px; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--ground); scrollbar-color: var(--line) var(--ground); }
+::selection { background: var(--select); color: var(--ink); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+a, .link {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 0.25s ease;
+}
+a:hover, .link:hover { text-decoration-color: currentColor; }
+a:focus-visible, button:focus-visible, summary:focus-visible, .scroll:focus-visible {
+  outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 2px;
+}
+.link { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+[hidden] { display: none !important; }
+
+header, main {
+  width: 100%;
+  max-width: 82rem;
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  padding-top: 1.6rem;
+}
+.firm { margin: 0; font-size: 1.1875rem; letter-spacing: 0.01em; }
+.firm a { text-decoration: none; }
+.firm a:hover { text-decoration: underline; text-decoration-color: var(--line); }
+nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; color: var(--soft); font-size: 0.9375rem; }
+main { flex: 1; padding-bottom: 4rem; }
+h1 {
+  margin: 2.6rem 0 0.9rem;
+  font-size: clamp(2.75rem, 1.6rem + 3.6vw, 4.5rem);
+  font-weight: 250;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+footer { padding: 1.5rem 1rem 2rem; text-align: center; color: var(--soft); font-size: 0.8125rem; }
+footer p { margin: 0; }
+
+/* ---------------------------------------------------------------- sign-in */
+.gate { padding: 1.25rem 0 3rem; }
+.gsi { min-height: 44px; }
+/* Google's button document is light; an iframe whose scheme differs gets an opaque white backdrop. */
+.gsi iframe { color-scheme: light; }
+.gate-msg { margin: 1rem 0 0; max-width: 34rem; min-height: 1.45em; }
+.gate-msg.err { color: var(--bad); }
+.stub-gsi {
+  font: inherit; font-size: 0.9375rem; color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 4px; padding: 0.55rem 1rem; cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- notices */
+.notices:empty { display: none; }
+.notice {
+  margin: 0 0 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-left: 2px solid var(--warn);
+  background: var(--band-out);
+  max-width: 48rem;
+}
+.notice::before { content: "▲ "; color: var(--warn); font-size: 0.75em; vertical-align: 0.1em; }
+
+/* ---------------------------------------------------------------- board */
+.meta { margin: 0 0 0.5rem; color: var(--soft); font-size: 0.875rem; font-variant-numeric: lining-nums tabular-nums; overflow-wrap: anywhere; }
+.strategy { margin-top: 2.6rem; }
+.strategy > h2, .lower h2 {
+  margin: 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.blurb { margin-left: 0.6rem; font-size: 1rem; font-weight: 400; letter-spacing: 0; color: var(--soft); }
+.account, .exposure { margin-top: 2rem; }
+.account + .account, .account + .exposure { padding-top: 1.6rem; border-top: 1px solid var(--hair); }
+.acct-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 1.1rem; }
+.account h3, .exposure h3 { margin: 0; font-size: 1.5rem; font-weight: 400; line-height: 1.2; }
+.state { margin: 0; display: inline-flex; align-items: baseline; gap: 0.4rem; font-size: 0.9375rem; }
+.state-note { margin: 0; font-size: 0.9375rem; color: var(--soft); }
+.age { margin: 0 0 0 auto; font-size: 0.8125rem; color: var(--soft); font-variant-numeric: lining-nums tabular-nums; }
+.dot { flex: none; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ok); align-self: center; }
+.s-warn .dot { background: var(--warn); }
+.s-bad .dot { background: var(--bad); border-radius: 1px; }
+.s-off .dot { background: transparent; border: 1px solid var(--soft); }
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
+  gap: 0.9rem 2rem;
+  margin: 1rem 0 0.9rem;
+}
+.figures div { min-width: 0; }
+.figures dt { font-size: 0.8125rem; color: var(--soft); }
+.figures dd { margin: 0.1rem 0 0; font-size: 1.25rem; line-height: 1.25; font-variant-numeric: lining-nums; }
+.figures dd.big { font-size: 1.875rem; line-height: 1.15; font-weight: 350; }
+.figures dd .alt { margin-left: 0.45rem; font-size: 0.9375rem; color: var(--soft); }
+.figures dd.note { margin-top: 0.1rem; font-size: 0.8125rem; color: var(--soft); }
+.venue, .size { margin: 0.15rem 0 0; font-size: 0.9375rem; color: var(--soft); overflow-wrap: anywhere; }
+.size b { font-weight: 400; color: var(--ink); }
+
+.panels { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.75rem 3rem; margin-top: 1.4rem; }
+@media (min-width: 920px) {
+  .panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "check band" "limits curve" "pos pos" "fills rules";
+  }
+  .panels.has-nights { grid-template-areas: "check band" "limits curve" "pos pos" "fills rules" "nights nights"; }
+  .p-check { grid-area: check; }
+  .p-band { grid-area: band; }
+  .p-limits { grid-area: limits; }
+  .p-curve { grid-area: curve; }
+  .p-pos { grid-area: pos; }
+  .p-fills { grid-area: fills; }
+  .p-rules { grid-area: rules; }
+  .p-nights { grid-area: nights; }
+}
+.panel { min-width: 0; padding-top: 0.7rem; border-top: 1px solid var(--hair); }
+.panel h4 { margin: 0 0 0.15rem; font-size: 1.0625rem; font-weight: 500; line-height: 1.3; }
+.sub { margin: 0 0 0.6rem; font-size: 0.8125rem; color: var(--soft); overflow-wrap: anywhere; }
+.lead { margin: 0.2rem 0 0.5rem; font-size: 1rem; }
+.empty, .err, .plain { margin: 0.35rem 0 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.empty { color: var(--soft); }
+.err { color: var(--bad); }
+.small { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--soft); overflow-wrap: anywhere; }
+.panel > * + h5, .exposure h5 { margin: 1rem 0 0.2rem; font-size: 0.9375rem; font-weight: 500; }
+
+/* ---------------------------------------------------------------- tables */
+.scroll { overflow-x: auto; max-width: 100%; overscroll-behavior-x: contain; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; font-variant-numeric: lining-nums tabular-nums; }
+caption { text-align: left; }
+th, td { padding: 0.3rem 0.65rem; text-align: left; vertical-align: baseline; white-space: nowrap; border-bottom: 1px solid var(--hair); }
+thead th { font-size: 0.8125rem; font-weight: 500; color: var(--soft); border-bottom-color: var(--line); }
+tbody th { font-weight: 400; }
+th:first-child, td:first-child { padding-left: 0; }
+th:last-child, td:last-child { padding-right: 0; }
+.num { text-align: right; }
+td.wrap { white-space: normal; min-width: 11rem; overflow-wrap: anywhere; }
+@media (max-width: 34rem) { .soft { white-space: normal; } }
+tr.has-note > * { border-bottom-color: transparent; padding-bottom: 0.1rem; }
+td.rownote { white-space: normal; padding-top: 0; font-size: 0.8125rem; color: var(--soft); }
+td.rownote > div { position: sticky; left: 0; }
+tfoot td { border-bottom: 0; border-top: 1px solid var(--line); font-weight: 500; }
+tbody tr:last-child > * { border-bottom-color: transparent; }
+/* A table wider than its box keeps its first column in view. */
+.scroll[role="region"] tr > :first-child:not(.rownote) { position: sticky; left: 0; z-index: 1; background: var(--ground); box-shadow: inset -1px 0 var(--hair); }
+tfoot tr:first-child td { border-top-color: var(--line); }
+.code { margin-left: 0.35rem; font-size: 0.8125rem; color: var(--soft); }
+.side { font-size: 0.75em; vertical-align: 0.08em; }
+details { margin-top: 0.5rem; }
+summary { cursor: pointer; font-size: 0.875rem; color: var(--soft); }
+summary:hover { color: var(--ink); }
+details[open] > summary { margin-bottom: 0.3rem; }
+.how { margin: 0; font-size: 0.8125rem; color: var(--soft); overflow-wrap: anywhere; }
+.how dt { margin-top: 0.4rem; color: var(--ink); font-weight: 500; }
+.how dd { margin: 0.1rem 0 0; }
+.sub2 { display: block; font-size: 0.8125rem; color: var(--soft); }
+.nw { white-space: nowrap; }
+
+/* ---------------------------------------------------------------- limits */
+.limits { list-style: none; margin: 0; padding: 0; }
+.limit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.15rem 1rem;
+  padding: 0.55rem 0 0.6rem;
+  border-bottom: 1px solid var(--hair);
+}
+.limit:first-child { padding-top: 0.2rem; }
+.lnums { text-align: right; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+.lnums .pc { display: inline-block; min-width: 4.2em; margin-left: 0.6rem; }
+.tag { margin-left: 0.5rem; font-size: 0.8125rem; }
+.l-close .tag { color: var(--warn); }
+.l-danger .tag { color: var(--bad); }
+.bar { grid-column: 1 / -1; height: 6px; margin: 0.25rem 0 0.1rem; background: var(--track); border-radius: 0 3px 3px 0; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--soft); border-radius: 0 3px 3px 0; }
+.l-close .bar span { background: var(--warn); }
+.l-danger .bar span { background: var(--bad); }
+.l-target .bar span { background: transparent; box-shadow: inset 0 0 0 1px var(--soft); }
+.lnote { grid-column: 1 / -1; font-size: 0.8125rem; color: var(--soft); overflow-wrap: anywhere; font-variant-numeric: lining-nums tabular-nums; }
+
+/* ---------------------------------------------------------------- charts */
+.legend { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin: 0 0 0.35rem; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--soft); }
+.legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend svg { display: block; overflow: visible; }
+.chart { position: relative; width: 100%; margin: 0.25rem 0 0.5rem; touch-action: pan-y; }
+.chart.h-cum { height: 190px; }
+.chart.h-fan { height: 210px; }
+.chart.h-eq { height: 160px; }
+.chart svg { display: block; overflow: visible; }
+.chart text { fill: var(--soft); font-size: 12px; font-family: "Newsreader", "Iowan Old Style", Georgia, serif; font-variant-numeric: lining-nums tabular-nums; }
+.chart text.end { fill: var(--ink); }
+.grid line { stroke: var(--hair); stroke-width: 1; }
+.grid line.zero { stroke: var(--line); }
+.ref { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
+.ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.ln-live { stroke: var(--ink); }
+.ln-bt { stroke: var(--bt); stroke-dasharray: 5 4; stroke-linecap: butt; }
+.pt-live { fill: var(--ink); stroke: var(--ground); stroke-width: 2; }
+.pt-bt { fill: var(--bt); stroke: var(--ground); stroke-width: 2; }
+.pt-open { fill: var(--ground); stroke: var(--ink); stroke-width: 1.5; }
+.band-out { fill: var(--band-out); }
+.band-in { fill: var(--band-in); }
+.median { fill: none; stroke: var(--soft); stroke-width: 1.5; }
+.guide { stroke: var(--line); stroke-width: 1; }
+.cross { stroke: var(--soft); stroke-width: 1; }
+.hit { fill: transparent; cursor: crosshair; }
+.tip {
+  position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;
+  padding: 0.3rem 0.55rem; background: var(--ground); border: 1px solid var(--line); border-radius: 3px;
+  font-size: 0.8125rem; line-height: 1.35; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums;
+}
+.tip b { font-weight: 500; }
+.tip .k { color: var(--soft); }
+
+/* ---------------------------------------------------------------- health, calendar */
+.lower { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.6rem 3rem; margin-top: 2.6rem; }
+@media (min-width: 920px) { .lower { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lower section { min-width: 0; }
+.lower h2 { margin-bottom: 0.9rem; }
+.hitems { list-style: none; margin: 0; padding: 0; }
+.hitem { display: grid; grid-template-columns: 0.9rem minmax(0, 1fr); column-gap: 0.35rem; padding: 0.4rem 0; border-bottom: 1px solid var(--hair); }
+.hitem .dot { margin-top: 0.5em; align-self: start; }
+.hname { font-weight: 500; }
+.hstate { margin-left: 0.45rem; font-size: 0.8125rem; color: var(--soft); }
+.s-warn .hstate { color: var(--warn); }
+.s-bad .hstate { color: var(--bad); }
+.hdetail { grid-column: 2; font-size: 0.875rem; color: var(--soft); overflow-wrap: anywhere; font-variant-numeric: lining-nums tabular-nums; }
+.errors { list-style: none; margin: 0; padding: 0; }
+.errors li { padding: 0.45rem 0; border-bottom: 1px solid var(--hair); font-size: 0.875rem; }
+.errors .when { font-variant-numeric: lining-nums tabular-nums; color: var(--soft); }
+.errors .lvl { margin-left: 0.5rem; font-size: 0.75rem; letter-spacing: 0.04em; }
+.errors .where { margin-left: 0.5rem; color: var(--soft); }
+.errors .msg { margin: 0.15rem 0 0; overflow-wrap: anywhere; }
+
+@media (max-width: 560px) {
+  header { padding-top: 1.1rem; }
+  .firm { font-size: 1.0625rem; }
+  nav { font-size: 0.875rem; gap: 0.25rem 1.25rem; }
+  h1 { margin-top: 2rem; }
+  .age { margin-left: 0; flex-basis: 100%; }
+  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 1.25rem; }
+  .figures div.first { grid-column: 1 / -1; }
+  table { font-size: 0.875rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <p class="firm"><a href="../">Aphelion Capital</a></p>
+  <nav aria-label="Site">
+    <a href="../about/">About</a>
+    <a href="mailto:support@siftappstudios.com">support@siftappstudios.com</a>
+    <button type="button" class="link" id="signout" hidden>Sign out</button>
+  </nav>
+</header>
+
+<main>
+  <h1>Dashboard</h1>
+  <div class="notices" id="notices" role="status"></div>
+  <section class="gate" id="gate" aria-label="Sign in">
+    <div class="gsi" id="gsi"></div>
+    <p class="gate-msg" id="gate-msg" aria-live="polite"></p>
+    <p><button type="button" class="link" id="retry" hidden>Try again</button></p>
+  </section>
+  <div id="board" hidden></div>
+</main>
+
+<footer>
+  <p>&copy; 2026 Aphelion Capital</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------ setup
+  var CLIENT_ID = '649814637947-nbccdoqdkeoq8ub54kufloqbj93sir9c.apps.googleusercontent.com';
+  var NS = 'http://www.w3.org/2000/svg';
+  var ET = 'America/New_York';
+  var STALE_MS = 3 * 60 * 1000;
+  var LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var Q = new URLSearchParams(location.search);
+  // The API is fixed. Only a page served from this machine may point it elsewhere:
+  // anywhere else a crafted link could hand the Google credential to another server.
+  var API = 'https://bot.siftappstudios.com';
+  if (LOCAL && Q.get('api')) {
+    try {
+      var o = new URL(Q.get('api'), location.href);
+      if (o.protocol === 'http:' || o.protocol === 'https:') API = o.origin;
+    } catch (e) { /* keep the fixed API */ }
+  }
+  var STUB = LOCAL && Q.has('stubgis') ? (Q.get('stubgis') || '1') : null;
+
+  var NAMES = { ftmo: 'FTMO', ig: 'IG', t212: 'Trading 212' };
+  var DEFAULT_STRATEGIES = [
+    { id: 'peri', name: 'Perihelion', blurb: 'Day book', accounts: ['ftmo', 'ig'] },
+    { id: 'aph', name: 'Aphelion', blurb: 'Swing book', accounts: ['t212'] }
+  ];
+  var SYM = { USD: '$', GBP: '£', EUR: '€' };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var gate = $('gate'), gsiBox = $('gsi'), gateMsg = $('gate-msg'), retryBtn = $('retry');
+  var board = $('board'), noticeBox = $('notices'), signoutBtn = $('signout');
+  var darkQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+  var view = 'loading', snap = null, failMsg = null, busy = false, lastTry = 0;
+  var justLoggedIn = false, gisReady = false, nonceAt = 0, signSeq = 0;
+
+  // ------------------------------------------------------------------ helpers
+  function num(v) { return typeof v === 'number' && isFinite(v); }
+  function txt(v) { return typeof v === 'string' ? v : num(v) ? String(v) : ''; }
+  function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+  function isErr(v) { return isObj(v) && 'error' in v; }
+
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      var v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+    return el;
+  }
+  function add(el, c) {
+    if (c == null || c === false || c === '') return;
+    if (Array.isArray(c)) { c.forEach(function (x) { add(el, x); }); return; }
+    el.appendChild(typeof c === 'object' ? c : document.createTextNode(String(c)));
+  }
+  function s(tag, attrs, text) {
+    var el = document.createElementNS(NS, tag);
+    if (attrs) for (var k in attrs) if (attrs[k] != null && attrs[k] !== '') el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    return el;
+  }
+
+  function digits(v, dp) {
+    return Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  }
+  function signOf(v, dp, signed) {
+    if (Number(Math.abs(v).toFixed(dp)) === 0) return '';
+    return v < 0 ? '\u2212' : signed ? '+' : '';
+  }
+  function fnum(v, dp, signed) {
+    if (!num(v)) return '—';
+    return signOf(v, dp, signed) + digits(v, dp);
+  }
+  function sym(ccy) { return SYM[ccy] || (typeof ccy === 'string' && ccy ? ccy + '\u00a0' : ''); }
+  function money(v, ccy, dp, signed) {
+    if (!num(v)) return '—';
+    if (dp == null) dp = 2;
+    return signOf(v, dp, signed) + sym(ccy) + digits(v, dp);
+  }
+  function pct(v, dp, signed) {
+    if (!num(v)) return '—';
+    if (dp == null) dp = 2;
+    return fnum(v * 100, dp, signed !== false) + '%';
+  }
+  function share(v) { // a share of equity, unsigned unless negative
+    if (!num(v)) return '—';
+    var a = Math.abs(v) * 100;
+    return fnum(v * 100, a >= 100 ? 0 : a >= 10 ? 1 : 2, false) + '%';
+  }
+  function qty(v) {
+    if (!num(v)) return '—';
+    return signOf(v, 4, false) + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: Math.abs(v) >= 100 ? 2 : 4 });
+  }
+  function decimals(v) {
+    if (!num(v)) return 0;
+    var m = String(v).match(/\.(\d+)$/);
+    return m ? Math.min(6, m[1].length) : 0;
+  }
+  function price(v, dp) { return num(v) ? fnum(v, dp, false) : '—'; }
+  function ordinal(n) {
+    var t = n % 100;
+    if (t >= 11 && t <= 13) return n + 'th';
+    return n + (['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  }
+
+  function parseT(iso) {
+    if (typeof iso !== 'string') return null;
+    var t = Date.parse(iso);
+    return isNaN(t) ? null : t;
+  }
+  var fmtCache = {};
+  function parts(t, opts, zone) {
+    var key = JSON.stringify(opts) + zone;
+    var f = fmtCache[key] || (fmtCache[key] = new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: zone }, opts)));
+    var out = {};
+    f.formatToParts(new Date(t)).forEach(function (p) { out[p.type] = p.value; });
+    return out;
+  }
+  // "Tue 20 Oct 10:05 ET"
+  function whenET(iso, secs, bare) {
+    var t = parseT(iso);
+    if (t == null) return '—';
+    var p = parts(t, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: secs ? '2-digit' : undefined, hourCycle: 'h23' }, ET);
+    return p.weekday + ' ' + p.day + ' ' + p.month + ' ' + p.hour + ':' + p.minute + (secs ? ':' + p.second : '') + (bare ? '' : ' ET');
+  }
+  // "20 Oct 10:41", New York time, for dense tables.
+  function whenShort(iso) {
+    var t = parseT(iso);
+    if (t == null) return '—';
+    var p = parts(t, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }, ET);
+    return p.day + ' ' + p.month + ' ' + p.hour + ':' + p.minute;
+  }
+  function timeET(iso) {
+    var t = parseT(iso);
+    if (t == null) return '—';
+    var p = parts(t, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }, ET);
+    return p.hour + ':' + p.minute + ':' + p.second + ' ET';
+  }
+  // A session date, "Mon 19 Oct".
+  function day(d, short) {
+    if (typeof d !== 'string') return '—';
+    var m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return d;
+    var t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    var p = parts(t, { weekday: 'short', day: 'numeric', month: 'short' }, 'UTC');
+    return short ? p.day + ' ' + p.month : p.weekday + ' ' + p.day + ' ' + p.month;
+  }
+  function ago(ms) {
+    if (ms < 0) ms = 0;
+    var sec = Math.round(ms / 1000);
+    if (sec < 60) return sec + ' s ago';
+    var min = Math.floor(sec / 60);
+    if (min < 120) return min + ' min ago';
+    var hr = Math.floor(min / 60);
+    if (hr < 48) return hr + ' h ago';
+    return Math.floor(hr / 24) + ' days ago';
+  }
+  function ageSpan(iso) {
+    var t = parseT(iso);
+    return h('span', { 'data-age': t == null ? null : String(t) }, t == null ? 'time not given' : ago(Date.now() - t));
+  }
+
+  // Text width for chart layout, in the page's own face.
+  var measureCtx = null;
+  function tw(str) {
+    if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+    measureCtx.font = '12px Newsreader, "Iowan Old Style", Georgia, serif';
+    return measureCtx.measureText(str).width;
+  }
+
+  // What a panel shows when its data is not there.
+  function placeholder(v, what) {
+    if (isErr(v)) return h('p', { class: 'err' }, 'Error from the server: ' + (txt(v.error) || 'no detail given') + '.');
+    if (v == null) return h('p', { class: 'empty' }, 'Not read yet.');
+    return h('p', { class: 'err' }, (what || 'This data') + ' came in a form the page does not read.');
+  }
+
+  // ------------------------------------------------------------------ network
+  function call(method, path, body) {
+    var ctl = new AbortController();
+    var timer = setTimeout(function () { ctl.abort(); }, 20000);
+    var opt = { method: method, credentials: 'include', cache: 'no-store', signal: ctl.signal, headers: {} };
+    if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(API + path, opt).then(function (r) {
+      return r.text().then(function (t) {
+        clearTimeout(timer);
+        var j = null;
+        if (t) { try { j = JSON.parse(t); } catch (e) { j = undefined; } }
+        return { status: r.status, json: j };
+      });
+    }).catch(function () { clearTimeout(timer); return { status: 0, json: null }; });
+  }
+
+  function setView(v) {
+    view = v;
+    gate.hidden = v === 'board';
+    board.hidden = v !== 'board';
+    signoutBtn.hidden = v !== 'board';
+  }
+  function setMsg(m, isError) {
+    gateMsg.textContent = m || '';
+    gateMsg.className = 'gate-msg' + (isError ? ' err' : '');
+  }
+
+  function load() {
+    if (busy) return Promise.resolve();
+    busy = true;
+    lastTry = Date.now();
+    return call('GET', '/api/dash/data').then(function (r) {
+      busy = false;
+      if (r.status === 200 && isObj(r.json)) {
+        snap = r.json;
+        failMsg = null;
+        justLoggedIn = false;
+        if (view !== 'board') { setView('board'); setMsg(''); }
+        render();
+        return;
+      }
+      if (r.status === 401) {
+        snap = null;
+        failMsg = null;
+        if (justLoggedIn) {
+          justLoggedIn = false;
+          toGate({ prompt: false, msg: 'Signed in, but the browser did not keep the session. Allow cookies for bot.siftappstudios.com and try again.' });
+        } else if (view !== 'gate') {
+          toGate({ prompt: true });
+        }
+        return;
+      }
+      failMsg = r.status === 0 ? 'The trading service is not answering.'
+        : r.status === 200 ? 'The trading service sent data the page could not read.'
+        : 'The trading service answered with an error (HTTP ' + r.status + ').';
+      if (view === 'board') { notices(); return; }
+      setView('down');
+      gsiBox.hidden = true;
+      retryBtn.hidden = false;
+      setMsg(failMsg, true);
+    });
+  }
+
+  // ------------------------------------------------------------------ sign-in
+  function stubGoogle() {
+    if (window.google && window.google.accounts) return window.google;
+    var cfg = null;
+    window.google = { accounts: { id: {
+      initialize: function (c) { cfg = c; },
+      renderButton: function (el) {
+        var b = h('button', { type: 'button', class: 'stub-gsi' }, 'Sign in with Google (local stub: ' + STUB + ')');
+        b.addEventListener('click', function () {
+          cfg.callback({ credential: 'stub.' + STUB + '.' + cfg.nonce, select_by: 'btn' });
+        });
+        el.appendChild(b);
+      },
+      prompt: function () {},
+      cancel: function () {},
+      disableAutoSelect: function () {}
+    } } };
+    return window.google;
+  }
+  var gisPromise = null;
+  function loadGis() {
+    if (STUB) return Promise.resolve(stubGoogle());
+    if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve(window.google);
+    if (!gisPromise) {
+      gisPromise = new Promise(function (ok, no) {
+        var tag = document.createElement('script');
+        tag.src = 'https://accounts.google.com/gsi/client';
+        tag.async = true;
+        tag.onload = function () {
+          if (window.google && window.google.accounts && window.google.accounts.id) ok(window.google);
+          else no(new Error('no gis'));
+        };
+        tag.onerror = function () { gisPromise = null; tag.remove(); no(new Error('gis failed')); };
+        document.head.appendChild(tag);
+      });
+    }
+    return gisPromise;
+  }
+
+  function drawButton() {
+    if (!gisReady) return;
+    gsiBox.textContent = '';
+    try {
+      window.google.accounts.id.renderButton(gsiBox, {
+        type: 'standard', theme: darkQ.matches ? 'filled_black' : 'outline', size: 'large',
+        text: 'signin_with', shape: 'rectangular', logo_alignment: 'left', locale: 'en-GB'
+      });
+    } catch (e) { console.error(e); setMsg('Google sign-in could not load.', true); }
+  }
+
+  function startSignIn(o) {
+    var seq = ++signSeq;
+    return loadGis().then(function (g) {
+      if (seq !== signSeq || view !== 'gate') return;
+      if (o.signedOut) { try { g.accounts.id.disableAutoSelect(); } catch (e) { /* nothing to undo */ } }
+      return call('GET', '/api/dash/nonce').then(function (r) {
+        if (seq !== signSeq || view !== 'gate') return;
+        if (r.status !== 200 || !isObj(r.json) || typeof r.json.nonce !== 'string') {
+          setMsg(r.status === 0 ? 'The trading service is not answering.' : 'Sign-in failed, try again.', true);
+          retryBtn.hidden = false;
+          return;
+        }
+        nonceAt = Date.now();
+        g.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          nonce: r.json.nonce,
+          callback: onCredential,
+          auto_select: true,
+          itp_support: true
+        });
+        gisReady = true;
+        drawButton();
+        if (o.prompt) { try { g.accounts.id.prompt(); } catch (e) { /* the button is still there */ } }
+      });
+    }, function () {
+      if (seq !== signSeq) return;
+      setMsg('Google sign-in could not load.', true);
+      retryBtn.hidden = false;
+    });
+  }
+
+  function toGate(o) {
+    setView('gate');
+    board.replaceChildren();
+    notices();
+    gsiBox.hidden = false;
+    retryBtn.hidden = true;
+    setMsg(o.msg || '', !!o.msg);
+    return startSignIn(o);
+  }
+
+  function onCredential(resp) {
+    setMsg('Signing in.');
+    var cred = resp && typeof resp.credential === 'string' ? resp.credential : '';
+    return call('POST', '/api/dash/login', { credential: cred }).then(function (r) {
+      if (r.status === 200) {
+        justLoggedIn = true;
+        setMsg('');
+        return load();
+      }
+      var m = r.status === 403 ? 'This Google account is not allowed.'
+        : r.status === 429 ? 'Too many sign-in attempts. Try again in a few minutes.'
+        : r.status === 0 ? 'The trading service is not answering.'
+        : 'Sign-in failed, try again.';
+      if (r.status === 403) { try { window.google.accounts.id.disableAutoSelect(); } catch (e) { /* ignore */ } }
+      setMsg(m, true);
+      // The nonce is single use: the next try needs a new one.
+      return startSignIn({ prompt: false });
+    });
+  }
+
+  function signOut() {
+    signoutBtn.disabled = true;
+    call('POST', '/api/dash/logout').then(function (r) {
+      signoutBtn.disabled = false;
+      if (r.status === 0) { failMsg = 'The trading service is not answering.'; notices(); return; }
+      snap = null;
+      failMsg = null;
+      toGate({ prompt: false, signedOut: true });
+    });
+  }
+
+  signoutBtn.addEventListener('click', signOut);
+  retryBtn.addEventListener('click', function () {
+    retryBtn.hidden = true;
+    setMsg('');
+    if (view === 'gate') startSignIn({ prompt: false }); else load();
+  });
+  var onScheme = function () { if (view === 'gate') drawButton(); if (view === 'board') redrawCharts(); };
+  if (darkQ.addEventListener) darkQ.addEventListener('change', onScheme); else darkQ.addListener(onScheme);
+
+  // ------------------------------------------------------------------ notices and ages
+  function notices() {
+    var lines = [];
+    if (view === 'board' && snap) {
+      var t = parseT(snap.asof);
+      if (t != null && Date.now() - t > STALE_MS) {
+        var min = Math.floor((Date.now() - t) / 60000);
+        var old = min < 120 ? min + ' min' : Math.floor(min / 60) + ' h';
+        lines.push('Data is ' + old + ' old: the trading service may be down.');
+      }
+      if (failMsg) lines.push(failMsg);
+    }
+    var key = lines.join('\n');
+    if (noticeBox.getAttribute('data-key') === key) return;
+    noticeBox.setAttribute('data-key', key);
+    noticeBox.replaceChildren.apply(noticeBox, lines.map(function (l) { return h('p', { class: 'notice' }, l); }));
+  }
+  function tick() {
+    var now = Date.now();
+    board.querySelectorAll('[data-age]').forEach(function (el) {
+      var t = Number(el.getAttribute('data-age'));
+      var v = ago(now - t);
+      if (el.textContent !== v) el.textContent = v;
+    });
+    notices();
+  }
+
+  // ------------------------------------------------------------------ render
+  var charts = [];
+  var ro = typeof ResizeObserver === 'function' ? new ResizeObserver(function (entries) {
+    entries.forEach(function (e) {
+      var c = e.target.__chart;
+      if (c && Math.round(e.contentRect.width) !== c.w) drawChart(c);
+    });
+  }) : null;
+
+  function capture() {
+    var st = { y: window.scrollY, open: {}, left: {}, focus: null };
+    board.querySelectorAll('details[data-key]').forEach(function (d) { st.open[d.getAttribute('data-key')] = d.open; });
+    board.querySelectorAll('.scroll[data-key]').forEach(function (d) { st.left[d.getAttribute('data-key')] = d.scrollLeft; });
+    var a = document.activeElement;
+    if (a && board.contains(a)) {
+      var k = a.closest('[data-key]');
+      if (k) st.focus = k.getAttribute('data-key');
+    }
+    return st;
+  }
+  function restore(st) {
+    board.querySelectorAll('details[data-key]').forEach(function (d) {
+      var k = d.getAttribute('data-key');
+      if (k in st.open) d.open = st.open[k];
+    });
+    board.querySelectorAll('.scroll[data-key]').forEach(function (d) {
+      var k = d.getAttribute('data-key');
+      if (st.left[k]) d.scrollLeft = st.left[k];
+    });
+    if (st.focus) {
+      var f = board.querySelector('[data-key="' + st.focus.replace(/["\\]/g, '') + '"]');
+      if (f) {
+        var target = f.matches('details') ? f.querySelector('summary') : f;
+        if (target && target.focus) target.focus({ preventScroll: true });
+      }
+    }
+    if (Math.abs(window.scrollY - st.y) > 1) window.scrollTo(0, st.y);
+  }
+
+  function render() {
+    var st = capture();
+    if (ro) ro.disconnect();
+    charts = [];
+    var frag = document.createDocumentFragment();
+    try { buildBoard(frag, snap); } catch (e) {
+      console.error(e);
+      frag.appendChild(h('p', { class: 'err' }, 'The page could not draw this snapshot.'));
+    }
+    board.replaceChildren(frag);
+    charts.forEach(function (c) { drawChart(c); if (ro) ro.observe(c.el); });
+    markScrollers();
+    restore(st);
+    notices();
+  }
+  function redrawCharts() { charts.forEach(drawChart); }
+  function markScrollers() {
+    board.querySelectorAll('.scroll').forEach(function (d) {
+      var wide = d.scrollWidth > d.clientWidth + 1;
+      if (wide) { d.setAttribute('tabindex', '0'); d.setAttribute('role', 'region'); }
+      else { d.removeAttribute('tabindex'); d.removeAttribute('role'); }
+      // A row note in a table wider than its box stays inside the visible part.
+      d.querySelectorAll('td.rownote > div').forEach(function (n) { n.style.maxWidth = wide ? d.clientWidth + 'px' : ''; });
+    });
+  }
+  window.addEventListener('resize', function () { if (view === 'board') markScrollers(); });
+
+  function buildBoard(root, sn) {
+    root.appendChild(metaLine(sn));
+    var accts = sn.accounts;
+    groups(sn).forEach(function (g) {
+      var sec = h('section', { class: 'strategy', 'aria-labelledby': 'st-' + g.id },
+        h('h2', { id: 'st-' + g.id }, g.name, g.blurb ? h('span', { class: 'blurb' }, g.blurb) : null));
+      if (!isObj(accts) || isErr(accts)) {
+        sec.appendChild(placeholder(accts, 'The accounts'));
+      } else {
+        g.accounts.forEach(function (id) { sec.appendChild(guard(function () { return accountBlock(id, accts[id], sn); }, 'This account')); });
+      }
+      if (g.exposure) sec.appendChild(guard(function () { return exposureBlock(sn.exposure); }, 'The exposure'));
+      root.appendChild(sec);
+    });
+    root.appendChild(h('div', { class: 'lower' },
+      guard(function () { return healthBlock(sn.health); }, 'The health list'),
+      guard(function () { return calendarBlock(sn.calendar, sn); }, 'The calendar')));
+  }
+  function guard(fn, what) {
+    try { return fn(); } catch (e) {
+      console.error(e);
+      return h('p', { class: 'err' }, what + ' could not be drawn.');
+    }
+  }
+
+  function groups(sn) {
+    var list = Array.isArray(sn.strategies) ? sn.strategies.filter(function (g) { return isObj(g) && !isErr(g) && txt(g.id); }) : [];
+    if (!list.length) list = DEFAULT_STRATEGIES;
+    var seen = {};
+    var out = list.map(function (g) {
+      var ids = Array.isArray(g.accounts) ? g.accounts.filter(function (x) { return typeof x === 'string'; }) : [];
+      ids.forEach(function (x) { seen[x] = true; });
+      return { id: txt(g.id).replace(/[^\w-]/g, '_'), name: txt(g.name) || txt(g.id), blurb: txt(g.blurb), accounts: ids,
+               exposure: ids.indexOf('ftmo') >= 0 && ids.indexOf('ig') >= 0 };
+    });
+    if (isObj(sn.accounts) && !isErr(sn.accounts)) {
+      var rest = Object.keys(sn.accounts).filter(function (k) { return !seen[k]; });
+      if (rest.length) out.push({ id: 'other', name: 'Other accounts', blurb: '', accounts: rest, exposure: false });
+    }
+    if (!out.some(function (g) { return g.exposure; }) && 'exposure' in sn && out.length) out[0].exposure = true;
+    return out;
+  }
+
+  function metaLine(sn) {
+    var p = h('p', { class: 'meta' }, 'Snapshot ', whenET(sn.asof, true), ', ', ageSpan(sn.asof));
+    var d = sn.deploy;
+    if (isObj(d) && !isErr(d)) {
+      var bits = [];
+      if (txt(d.id)) bits.push('deploy ' + txt(d.id));
+      if (parseT(d.started) != null) bits.push('started ' + whenET(d.started));
+      if (num(d.rss_mb)) bits.push(fnum(d.rss_mb, 0) + ' MB');
+      if (bits.length) add(p, ' · ' + bits.join(', ').replace(/^d/, 'D'));
+    } else if (isErr(d)) {
+      add(p, ' · deploy not read: ' + txt(d.error));
+    }
+    return p;
+  }
+
+  var STATES = {
+    trading: ['Trading', 's-ok'], paused: ['Paused', 's-warn'], stopped: ['Stopped', 's-warn'],
+    disconnected: ['Disconnected', 's-bad'], off: ['Off', 's-off']
+  };
+
+  function accountBlock(id, a, sn) {
+    var hid = 'ac-' + id.replace(/[^\w-]/g, '_');
+    var name = (isObj(a) && txt(a.name)) || NAMES[id] || id;
+    var art = h('article', { class: 'account', 'aria-labelledby': hid });
+    var head = h('div', { class: 'acct-head' }, h('h3', { id: hid }, name));
+    art.appendChild(head);
+    if (!isObj(a) || isErr(a)) { art.appendChild(placeholder(a, 'This account')); return art; }
+
+    var stv = STATES[a.state];
+    var label = stv ? stv[0] : txt(a.state) ? txt(a.state) : 'State not read yet';
+    head.appendChild(h('p', { class: 'state ' + (stv ? stv[1] : 's-off') }, h('span', { class: 'dot', 'aria-hidden': 'true' }), label));
+    if (txt(a.state_note)) head.appendChild(h('p', { class: 'state-note' }, txt(a.state_note)));
+    // Trading 212's figures come from the account's last reading, not from the snapshot's time.
+    if (parseT(a.read_at) != null) head.appendChild(h('p', { class: 'age' }, 'Account read ', whenET(a.read_at), ', ', ageSpan(a.read_at)));
+    else head.appendChild(h('p', { class: 'age' }, 'Data from ', timeET(a.asof || sn.asof), ', ', ageSpan(a.asof || sn.asof)));
+
+    art.appendChild(figures(a));
+    if (txt(a.venue)) art.appendChild(h('p', { class: 'venue' }, txt(a.venue)));
+    if (txt(a.feed)) art.appendChild(h('p', { class: 'venue' }, 'Feed: ' + txt(a.feed)));
+    if (txt(a.size)) art.appendChild(h('p', { class: 'size' }, 'Size: ', h('b', null, txt(a.size))));
+
+    var nights = id === 't212' || 'nights' in a;
+    var grid = h('div', { class: 'panels' + (nights ? ' has-nights' : '') });
+    grid.appendChild(panel(id, 'check', 'Live against the backtest', function (p) { return checkPanel(id, a, p); }));
+    grid.appendChild(panel(id, 'band', 'Live return against the backtest\u2019s range', function () { return bandPanel(id, a); }));
+    grid.appendChild(panel(id, 'limits', 'Distance to the limits', function () { return limitsPanel(a); }));
+    grid.appendChild(panel(id, 'pos', 'Positions now', function () { return positionsPanel(id, a); }));
+    grid.appendChild(panel(id, 'fills', 'Fill quality', function (p) { return fillsPanel(id, a, p); }));
+    grid.appendChild(panel(id, 'rules', 'Rules this week', function (p) { return rulesPanel(id, a, p); }));
+    grid.appendChild(panel(id, 'curve', 'Equity by session', function () { return curvePanel(id, a); }));
+    if (nights) grid.appendChild(panel(id, 'nights', 'Nights', function () { return nightsPanel(id, a); }));
+    art.appendChild(grid);
+    return art;
+  }
+
+  function panel(acct, key, title, fn) {
+    var hid = 'p-' + acct + '-' + key;
+    var sec = h('section', { class: 'panel p-' + key, 'aria-labelledby': hid }, h('h4', { id: hid }, title));
+    try { add(sec, fn(sec)); } catch (e) {
+      console.error(e);
+      sec.appendChild(h('p', { class: 'err' }, 'This panel could not be drawn.'));
+    }
+    return sec;
+  }
+  function sub(text) { return text ? h('p', { class: 'sub' }, text) : null; }
+
+  function figures(a) {
+    var c = a.ccy;
+    var dl = h('dl', { class: 'figures' });
+    function item(label, value, opts) {
+      opts = opts || {};
+      var d = h('div', { class: opts.first ? 'first' : null }, h('dt', null, label), h('dd', { class: opts.big ? 'big' : null }, value, opts.alt ? h('span', { class: 'alt' }, opts.alt) : null));
+      if (opts.note) d.appendChild(h('dd', { class: 'note' }, opts.note));
+      dl.appendChild(d);
+    }
+    item('Equity', money(a.equity, c), { big: true, first: true });
+    var basis = txt(a.since_start_basis);
+    var since = num(a.since_start) ? a.since_start : !basis && num(a.equity) && num(a.start) && a.start ? a.equity / a.start - 1 : null;
+    var from = num(a.start) || a.start_date ? 'from ' + (num(a.start) ? money(a.start, c) : 'the start') + (a.start_date ? ' on ' + day(a.start_date) : '') : '';
+    if (basis) {
+      // A chained return leaves deposits out, so equity less the start is not the same money: only the share.
+      item('Since start', pct(since), { note: [from, basis].filter(Boolean).join('; ') });
+    } else {
+      item('Since start', pct(since), { alt: num(a.equity) && num(a.start) ? money(a.equity - a.start, c, 2, true) : null, note: from || null });
+    }
+    var se = a.session;
+    if (isObj(se) && !isErr(se)) {
+      item('This session', money(se.pnl, c, 2, true), { alt: num(se.ret) ? pct(se.ret) : null, note: se.date ? day(se.date) : null });
+    } else {
+      var flat = se === null && Array.isArray(a.positions) && a.positions.length === 0;
+      item('This session', '—', { note: isErr(se) ? 'error: ' + txt(se.error) : flat ? 'no position held' : 'not read yet' });
+    }
+    if (num(a.balance)) item('Balance', money(a.balance, c));
+    if (num(a.available)) item('Available', money(a.available, c));
+    if (num(a.margin)) item('Margin in use', money(a.margin, c));
+    if (num(a.invested)) item('Invested', money(a.invested, c));
+    if (num(a.free)) item('Free cash', money(a.free, c));
+    return dl;
+  }
+
+  // ---- tables
+  // cols: [{label, num, wrap, get(row) -> string | node}]
+  // `note(r)`, when given, puts a row's note on its own full-width line under it.
+  function table(key, caption, cols, rows, foot, note) {
+    var t = h('table', null,
+      h('caption', { class: 'vh' }, caption),
+      h('thead', null, h('tr', null, cols.map(function (c) { return h('th', { scope: 'col', class: c.num ? 'num' : null }, c.label); }))),
+      h('tbody', null, rows.map(function (r) {
+        var nt = note ? txt(note(r)) : '';
+        var tr = h('tr', { class: nt ? 'has-note' : null }, cols.map(function (c, i) {
+          var v = c.get(r);
+          var cls = (c.num ? 'num' : '') + (c.wrap ? ' wrap' : '') + (c.soft ? ' soft' : '');
+          return i === 0 && !c.num ? h('th', { scope: 'row', class: cls.trim() || null }, v) : h('td', { class: cls.trim() || null }, v);
+        }));
+        return nt ? [tr, h('tr', null, h('td', { class: 'rownote', colspan: String(cols.length) }, h('div', null, nt)))] : tr;
+      })));
+    if (foot) {
+      t.appendChild(h('tfoot', null, h('tr', null, cols.map(function (c, i) {
+        return h('td', { class: c.num ? 'num' : null }, foot[i] == null ? '' : foot[i]);
+      }))));
+    }
+    return h('div', { class: 'scroll', 'data-key': key, 'aria-label': caption }, t);
+  }
+  // A table of the first `n` rows, the rest behind a disclosure.
+  function tableMore(key, caption, cols, rows, n, more) {
+    if (rows.length <= n + 2) return table(key, caption, cols, rows);
+    return [table(key, caption, cols, rows.slice(0, n)),
+      h('details', { 'data-key': key + '-more' }, h('summary', null, more + ' (' + rows.length + ')'), table(key + '-all', caption + ', all', cols, rows))];
+  }
+  function sideCell(side) {
+    if (side === 1 || side === 'buy' || side === 'long') return [h('span', { class: 'side', 'aria-hidden': 'true' }, '▲'), h('span', { class: 'vh' }, 'long')];
+    if (side === -1 || side === 'sell' || side === 'short') return [h('span', { class: 'side', 'aria-hidden': 'true' }, '▼'), h('span', { class: 'vh' }, 'short')];
+    return '—';
+  }
+  function marketCell(r) {
+    var label = txt(r.label), code = txt(r.market);
+    if (!label) return code || '—';
+    return [label, code && code !== label ? h('span', { class: 'code' }, code) : null];
+  }
+  function sumOf(rows, k) {
+    var t = 0;
+    for (var i = 0; i < rows.length; i++) { if (!num(rows[i][k])) return null; t += rows[i][k]; }
+    return rows.length ? t : null;
+  }
+  function objRows(v) { return v.filter(isObj); }
+
+  // ---- live against the backtest
+  function checkPanel(id, a, sec) {
+    var c = a.check;
+    if (!isObj(c) || isErr(c)) return placeholder(c, 'The check');
+    if (c.available === false) {
+      return [h('p', { class: 'plain' }, txt(c.note) || 'No backtest replay for this account.'),
+        parseT(c.next_run) != null ? h('p', { class: 'small' }, 'Next run ' + whenET(c.next_run) + '.') : null];
+    }
+    var out = [];
+    var meta = [txt(c.note), parseT(c.next_run) != null ? 'Next run ' + whenET(c.next_run) + '.' : ''].filter(Boolean).join(' ');
+    out.push(sub(meta));
+    var ses = c.sessions;
+    if (!Array.isArray(ses)) { out.push(placeholder(ses, 'The sessions')); return out; }
+    var rows = objRows(ses).slice().sort(function (x, y) { return txt(x.date) < txt(y.date) ? -1 : txt(x.date) > txt(y.date) ? 1 : 0; });
+    if (!rows.length) { out.push(h('p', { class: 'empty' }, 'No sessions checked yet.')); return out; }
+    var ccy = a.ccy;
+    // Cumulative lines from a zero before the first session.
+    var live = [0], bt = [0], labels = ['start'];
+    rows.forEach(function (r, i) {
+      live.push(num(r.live) && num(live[i]) ? live[i] + r.live : null);
+      bt.push(num(r.bt) && num(bt[i]) ? bt[i] + r.bt : null);
+      labels.push(day(r.date, true));
+    });
+    out.push(legend([['live', 'Live'], ['bt', 'Backtest']]));
+    out.push(chart('h-cum', 'Cumulative profit and loss, live and backtest, over ' + rows.length + ' sessions.', function (el, w) {
+      drawLines(el, w, {
+        height: 190, labels: labels, ccy: ccy,
+        series: [
+          { name: 'Live', cls: 'live', vals: live },
+          { name: 'Backtest', cls: 'bt', vals: bt }
+        ],
+        zero: true
+      });
+    }));
+    var cols = [
+      { label: 'Session', get: function (r) { return day(r.date); } },
+      { label: 'Live', num: true, get: function (r) { return money(r.live, ccy, 2); } },
+      { label: 'Backtest', num: true, get: function (r) { return money(r.bt, ccy, 2); } },
+      { label: 'Difference', num: true, get: function (r) { return money(num(r.diff) ? r.diff : num(r.live) && num(r.bt) ? r.live - r.bt : null, ccy, 2, true); } },
+      { label: 'Trades', num: true, get: function (r) { return fnum(r.live_n, 0) + ' / ' + fnum(r.bt_n, 0); } },
+      { label: 'Matched', num: true, get: function (r) { return fnum(r.matched, 0); } }
+    ];
+    var note = function (r) { return r.note; };
+    var cum = isObj(c.cum) ? c.cum : {};
+    var foot = rows.length > 1 || isObj(c.cum) ? ['Total', money(num(cum.live) ? cum.live : sumOf(rows, 'live'), ccy, 2),
+      money(num(cum.bt) ? cum.bt : sumOf(rows, 'bt'), ccy, 2), money(num(cum.diff) ? cum.diff : sumOf(rows, 'diff'), ccy, 2, true),
+      fnum(sumOf(rows, 'live_n'), 0) + ' / ' + fnum(sumOf(rows, 'bt_n'), 0), fnum(sumOf(rows, 'matched'), 0)] : null;
+    var newest = rows.slice().reverse();
+    if (newest.length > 12) {
+      out.push(table(id + '-check', name4(a) + ' sessions, live against the backtest', cols, newest.slice(0, 10), foot, note));
+      out.push(h('details', { 'data-key': id + '-check-more' }, h('summary', null, 'All sessions (' + newest.length + ')'),
+        table(id + '-check-all', name4(a) + ' sessions, all', cols, newest, foot, note)));
+    } else {
+      out.push(table(id + '-check', name4(a) + ' sessions, live against the backtest', cols, newest, foot, note));
+    }
+    return out;
+  }
+  function name4(a) { return txt(a.name) || 'Account'; }
+
+  // ---- the backtest's range
+  function bandPanel(id, a) {
+    var b = a.band;
+    if (!isObj(b) || isErr(b)) return placeholder(b, 'The range');
+    var out = [];
+    var n = num(b.n) ? Math.round(b.n) : null;
+    var fan = fanData(b);
+    var qs = fan ? fan.q : Array.isArray(b.q) && b.q.every(num) && b.q.length ? b.q : [5, 95];
+    var where = function (zone, p, m) {
+      var of = ' of the backtest\u2019s ' + m + '-session results';
+      if (zone === 'below') return ', below the ' + ordinal(qs[0]) + ' percentile' + of;
+      if (zone === 'above') return ', above the ' + ordinal(qs[qs.length - 1]) + ' percentile' + of;
+      if (num(p)) return ', the ' + ordinal(Math.max(1, Math.min(99, Math.round(p * 100)))) + ' percentile' + of;
+      return '';
+    };
+    var line;
+    if (!n) line = 'No finished sessions yet.';
+    else line = 'After ' + n + ' ' + (n === 1 ? 'session' : 'sessions') + ': ' + pct(b.live) + where(b.zone, b.percentile, n) + '.';
+    if (n != null && n < 5) line += ' Too few sessions to judge.';
+    out.push(h('p', { class: 'lead' }, line));
+    var nNow = num(b.n_now) ? Math.round(b.n_now) : null;
+    var withNow = nNow && nNow !== n && num(b.live_now);
+    if (withNow) out.push(h('p', { class: 'small' }, 'With the session in progress: ' + pct(b.live_now) + ' over ' + nNow + ' sessions' + where(b.zone_now, b.percentile_now, nNow) + '.'));
+    if (fan) {
+      var keys = [['out', ordinal(qs[0]) + ' to ' + ordinal(qs[qs.length - 1]) + ' percentile']];
+      if (fan.inner) keys.push(['in', ordinal(qs[fan.inner[0]]) + ' to ' + ordinal(qs[fan.inner[1]])]);
+      if (fan.mid != null) keys.push(['med', qs[fan.mid] === 50 ? 'Median' : ordinal(qs[fan.mid]) + ' percentile']);
+      if (n && num(b.live)) keys.push(['dot', 'Live, finished sessions']);
+      if (withNow) keys.push(['open', 'With the session in progress']);
+      out.push(legend(keys));
+      out.push(chart('h-fan', 'The backtest\u2019s range of returns by number of sessions, with the live return after ' + (n || 0) + ' sessions.', function (el, w) {
+        drawFan(el, w, fan, n, b.live, withNow ? nNow : null, withNow ? b.live_now : null);
+      }));
+    } else if (txt(b.note)) {
+      out.push(h('p', { class: 'plain' }, txt(b.note)));
+    } else {
+      out.push(h('p', { class: 'empty' }, 'The backtest\u2019s range is not in this snapshot.'));
+    }
+    if (fan && txt(b.note)) out.push(h('p', { class: 'small' }, txt(b.note)));
+    var stats = backtestStats(b, b.basis);
+    var head = ['Backtest', txt(b.window) ? txt(b.window).replace('..', ' to ') : '', b.in_sample === true ? 'in-sample' : b.in_sample === false ? 'out-of-sample' : '']
+      .filter(Boolean).join(', ');
+    if (stats || txt(b.window)) out.push(h('p', { class: 'small' }, head + (stats ? ': ' + stats : '') + '.'));
+    var how = [['Source', b.source], ['Cost', b.cost], ['Sizing', b.sizing]].filter(function (x) { return txt(x[1]); });
+    if (isObj(b.sens)) {
+      Object.keys(b.sens).forEach(function (k) {
+        var v = isObj(b.sens[k]) ? backtestStats(b.sens[k], b.basis) : '';
+        if (v) how.push(['Variant', k + ': ' + v]);
+      });
+    }
+    if (how.length) {
+      out.push(h('details', { 'data-key': id + '-band-how' }, h('summary', null, 'How the backtest was run'),
+        h('dl', { class: 'how' }, how.map(function (x) { return [h('dt', null, x[0]), h('dd', null, txt(x[1]))]; }))));
+    }
+    return out;
+  }
+  function backtestStats(b, basis) {
+    var stats = [];
+    if (num(b.cagr)) stats.push('CAGR ' + pct(b.cagr, 1, false));
+    else if (num(b.per_year)) stats.push(pct(b.per_year, 1, false) + (basis === 'sum' ? ' a year, sessions summed on the initial balance' : ' a year'));
+    if (num(b.maxdd)) stats.push('MaxDD ' + pct(b.maxdd, 1, false));
+    if (num(b.sharpe)) stats.push('Sharpe ' + fnum(b.sharpe, 2));
+    return stats.join(' / ');
+  }
+  function fanData(b) {
+    if (!Array.isArray(b.h) || !Array.isArray(b.q) || !Array.isArray(b.ret)) return null;
+    var q = b.q.filter(num);
+    if (q.length < 2 || q.length !== b.q.length) return null;
+    var pts = [{ h: 0, r: q.map(function () { return 0; }) }];
+    b.h.forEach(function (hh, i) {
+      var r = b.ret[i];
+      if (num(hh) && hh > 0 && Array.isArray(r) && r.length === q.length && r.every(num)) pts.push({ h: hh, r: r });
+    });
+    if (pts.length < 2) return null;
+    pts.sort(function (x, y) { return x.h - y.h; });
+    var mid = q.indexOf(50);
+    if (mid < 0) mid = q.length % 2 ? (q.length - 1) / 2 : null;
+    return { q: q, pts: pts, mid: mid, inner: q.length >= 4 ? [1, q.length - 2] : null };
+  }
+
+  // ---- limits
+  function limitsPanel(a) {
+    var L = a.limits;
+    if (!Array.isArray(L)) return placeholder(L, 'The limits');
+    var rows = objRows(L);
+    if (!rows.length) return h('p', { class: 'empty' }, 'No limits for this account.');
+    var order = rows.map(function (r, i) { return { r: r, i: i }; }).sort(function (x, y) {
+      var tx = x.r.kind === 'target' ? 1 : 0, ty = y.r.kind === 'target' ? 1 : 0;
+      if (tx !== ty) return tx - ty;
+      var sx = num(x.r.share) ? x.r.share : Infinity, sy = num(y.r.share) ? y.r.share : Infinity;
+      return sx - sy || x.i - y.i;
+    });
+    var ccy = a.ccy, SCALE = 0.10;
+    var list = h('ul', { class: 'limits' });
+    order.forEach(function (o) {
+      var r = o.r, sh = num(r.share) ? r.share : null, cls = 'limit', tag = null;
+      if (r.kind === 'target') cls += ' l-target';
+      else if (sh != null && sh <= 0) { cls += ' l-danger'; tag = 'reached'; }
+      else if (sh != null && sh < 0.005) { cls += ' l-danger'; tag = 'very close'; }
+      else if (sh != null && sh < 0.015) { cls += ' l-close'; tag = 'close'; }
+      var fill = h('span');
+      fill.style.width = (sh == null ? 0 : Math.max(0, Math.min(1, sh / SCALE)) * 100).toFixed(2) + '%';
+      var noteBits = [];
+      if (num(r.level)) noteBits.push('At ' + money(r.level, ccy));
+      if (txt(r.note)) noteBits.push(txt(r.note));
+      list.appendChild(h('li', { class: cls },
+        h('span', { class: 'lname' }, txt(r.name) || 'Limit'),
+        h('span', { class: 'lnums' }, money(r.distance, ccy), h('span', { class: 'pc' }, share(sh)), tag ? h('span', { class: 'tag' }, tag) : null),
+        h('div', { class: 'bar', 'aria-hidden': 'true' }, fill),
+        noteBits.length ? h('span', { class: 'lnote' }, noteBits.join(' · ')) : null));
+    });
+    return [sub('Distance from equity, in money and as a share of equity.'), list,
+      h('p', { class: 'small' }, 'Bars run from 0 to 10% of equity. Amber under 1.5%, red under 0.5%.')];
+  }
+
+  // ---- positions
+  function positionsPanel(id, a) {
+    var P = a.positions;
+    if (!Array.isArray(P)) return placeholder(P, 'The positions');
+    var rows = objRows(P);
+    if (!rows.length) return h('p', { class: 'empty' }, 'No open positions.');
+    var ccy = a.ccy;
+    var any = function (k, test) { return rows.some(function (r) { return test ? test(r[k]) : num(r[k]); }); };
+    // Small accounts in cents, large ones in whole units.
+    var ndp = num(a.equity) && Math.abs(a.equity) < 20000 ? 2 : 0;
+    // The money first, so a phone shows it without scrolling the table.
+    var cols = [{ label: 'Market', get: marketCell },
+      { label: 'Side', get: function (r) { return sideCell(r.side); } },
+      { label: 'Notional', num: true, get: function (r) { return money(r.notional, ccy, ndp); } }];
+    if (any('pnl')) cols.push({ label: 'Open P&L', num: true, get: function (r) { return money(r.pnl, ccy, 2, true); } });
+    cols.push({ label: 'Size', num: true, get: function (r) { return num(r.size) ? qty(r.size) + (txt(r.size_unit) ? ' ' + txt(r.size_unit) : '') : '—'; } });
+    if (any('level')) cols.push({ label: 'Level', num: true, get: function (r) { return price(r.level, Math.min(4, decimals(r.level))); } });
+    if (any('fill_usd')) cols.push({ label: 'Fill, $', num: true, get: function (r) { return price(r.fill_usd, 2); } });
+    if (any('rule', txt)) cols.push({ label: 'Rule', wrap: rows.some(function (r) { return txt(r.rule).indexOf(',') >= 0; }), get: function (r) { return txt(r.rule) || '—'; } });
+    if (any('opened', function (v) { return parseT(v) != null; })) cols.push({ label: 'Opened, ET', get: function (r) { return parseT(r.opened) != null ? whenET(r.opened, false, true) : '—'; } });
+    var foot = cols.map(function (c) {
+      if (c.label === 'Market') return rows.length + (rows.length === 1 ? ' position' : ' positions');
+      if (c.label === 'Notional') return money(sumOf(rows, 'notional'), ccy, ndp);
+      if (c.label === 'Open P&L') return money(sumOf(rows, 'pnl'), ccy, 2, true);
+      return '';
+    });
+    var out = [table(id + '-pos', name4(a) + ' positions', cols, rows, rows.length > 1 ? foot : null)];
+    if (!any('pnl') && id === 'ig') out.push(h('p', { class: 'small' }, 'IG’s open P&L per bet is not read.'));
+    return out;
+  }
+
+  // ---- fills
+  function fillsPanel(id, a, sec) {
+    var f = a.fills;
+    if (!isObj(f) || isErr(f)) return placeholder(f, 'The fills');
+    var basis = txt(f.basis) || 'each fill against the quoted mid when the order went in';
+    var line = basis.charAt(0).toUpperCase() + basis.slice(1) + (txt(f.window) ? ', ' + txt(f.window) : '') + '. A positive cost was paid.';
+    var out = [sub(line)];
+    var bm = f.by_market;
+    out.push(h('h5', null, 'By market'));
+    if (!Array.isArray(bm)) out.push(placeholder(bm, 'The fills by market'));
+    else if (!objRows(bm).length) out.push(h('p', { class: 'empty' }, 'No fills yet.'));
+    else {
+      var rows = objRows(bm).slice().sort(function (x, y) { return (num(y.n) ? y.n : 0) - (num(x.n) ? x.n : 0); });
+      var bcols = [
+        { label: 'Market', get: marketCell },
+        { label: 'Fills', num: true, get: function (r) { return fnum(r.n, 0); } },
+        { label: 'Average cost, bp', num: true, get: function (r) { return fnum(r.cost_bp, 2); } }
+      ];
+      if (rows.some(function (r) { return num(r.model_bp); })) {
+        bcols.push(
+          { label: 'Model, bp', num: true, get: function (r) { return fnum(r.model_bp, 2); } },
+          { label: 'Difference, bp', num: true, get: function (r) { return num(r.cost_bp) && num(r.model_bp) ? fnum(r.cost_bp - r.model_bp, 2, true) : '—'; } });
+      }
+      out.push(tableMore(id + '-fbm', name4(a) + ' fill cost by market', bcols, rows, 8, 'All markets'));
+    }
+    var rc = f.recent;
+    out.push(h('h5', null, 'Recent fills'));
+    if (!Array.isArray(rc)) out.push(placeholder(rc, 'The recent fills'));
+    else if (!objRows(rc).length) out.push(h('p', { class: 'empty' }, 'No fills yet.'));
+    else {
+      var rr = objRows(rc).slice().sort(function (x, y) { return (parseT(y.t) || 0) - (parseT(x.t) || 0); });
+      var hasRule = rr.some(function (r) { return txt(r.rule); });
+      var cols = [{ label: 'Time, ET', get: function (r) { return whenShort(r.t); } },
+        { label: hasRule ? 'Market, rule' : 'Market', get: function (r) {
+          var m = txt(r.label) || txt(r.market) || '—';
+          return txt(r.rule) ? [m, h('span', { class: 'code' }, txt(r.rule))] : m;
+        } }];
+      cols.push(
+        { label: 'Side', get: function (r) { return txt(r.side) ? txt(r.side).charAt(0).toUpperCase() + txt(r.side).slice(1) + (r.closing === true ? ', closing' : '') : '—'; } },
+        { label: 'Cost, bp', num: true, get: function (r) { return fnum(r.cost_bp, 2); } },
+        { label: 'Price', num: true, get: function (r) { return price(r.price, Math.max(decimals(r.mid), decimals(r.price))); } },
+        { label: 'Mid', num: true, get: function (r) { return price(r.mid, Math.max(decimals(r.mid), decimals(r.price))); } },
+        { label: 'Size', num: true, get: function (r) { return qty(r.size); } });
+      out.push(tableMore(id + '-frc', name4(a) + ' recent fills', cols, rr, 8, 'All recent fills'));
+    }
+    return out;
+  }
+
+  // ---- rules
+  function rulesPanel(id, a) {
+    var c = a.check;
+    if (!isObj(c) || isErr(c)) return placeholder(c, 'The check');
+    if (c.available === false) return h('p', { class: 'empty' }, 'No rule-by-rule check for this account.');
+    var R = c.rules;
+    if (!Array.isArray(R)) return placeholder(R, 'The rules');
+    var rows = objRows(R);
+    if (!rows.length) return h('p', { class: 'empty' }, 'No rules traded in the last 7 sessions.');
+    rows = rows.slice().sort(function (x, y) {
+      var dx = num(x.diff) ? Math.abs(x.diff) : -1, dy = num(y.diff) ? Math.abs(y.diff) : -1;
+      return dy - dx;
+    });
+    var ccy = a.ccy;
+    return [sub('The last 7 sessions, biggest differences first.'), tableMore(id + '-rules', name4(a) + ' rules, live against the backtest', [
+      { label: 'Rule', get: function (r) { return txt(r.rule) || '—'; } },
+      { label: 'Live', num: true, get: function (r) { return money(r.live, ccy, 2); } },
+      { label: 'Backtest', num: true, get: function (r) { return money(r.bt, ccy, 2); } },
+      { label: 'Difference', num: true, get: function (r) { return money(r.diff, ccy, 2, true); } },
+      { label: 'Sessions', num: true, get: function (r) { return fnum(r.sessions, 0); } }
+    ], rows, 10, 'All rules')];
+  }
+
+  // ---- equity curve
+  function curvePanel(id, a) {
+    var C = a.curve;
+    if (!Array.isArray(C)) return placeholder(C, 'The equity curve');
+    var rows = objRows(C).slice().sort(function (x, y) { return txt(x.date) < txt(y.date) ? -1 : txt(x.date) > txt(y.date) ? 1 : 0; });
+    var vals = [], labels = [], tips = [];
+    // The start goes in front unless the first row already is it (Trading 212's start is its first reading).
+    var r0 = rows[0];
+    if (num(a.start) && (!r0 || !a.start_date || txt(a.start_date) < txt(r0.date) || (txt(a.start_date) === txt(r0.date) && r0.equity !== a.start))) {
+      vals.push(a.start); labels.push('start'); tips.push('Start' + (a.start_date ? ', ' + day(a.start_date) : ''));
+    }
+    rows.forEach(function (r) { vals.push(num(r.equity) ? r.equity : null); labels.push(day(r.date, true)); tips.push(day(r.date)); });
+    var now = num(a.equity);
+    if (now) { vals.push(a.equity); labels.push('now'); tips.push('Now'); }
+    if (vals.filter(num).length < 2) return h('p', { class: 'empty' }, rows.length ? 'Not enough sessions to draw.' : 'No finished sessions yet.');
+    var ccy = a.ccy;
+    return [chart('h-eq', name4(a) + ' equity at the end of each session' + (now ? ', and now' : '') + '.', function (el, w) {
+      drawLines(el, w, {
+        height: 160, labels: labels, tips: tips, ccy: ccy,
+        series: [{ name: 'Equity', cls: 'live', vals: vals, openLast: now }],
+        ref: num(a.start) ? a.start : null
+      });
+    }), h('p', { class: 'small' }, [num(a.start) ? 'Dashed line: the start, ' + money(a.start, ccy) + '.' : '',
+      now ? 'Open dot: now, joined by a dotted line.' : '', txt(a.curve_note) ? 'Each point is ' + txt(a.curve_note) + '.' : ''].filter(Boolean).join(' '))];
+  }
+
+  // ---- nights (Trading 212)
+  function nightsPanel(id, a) {
+    var N = a.nights;
+    if (!Array.isArray(N)) return placeholder(N, 'The nights');
+    var rows = objRows(N).slice().sort(function (x, y) { return txt(x.date) > txt(y.date) ? -1 : txt(x.date) < txt(y.date) ? 1 : 0; });
+    if (!rows.length) return h('p', { class: 'empty' }, 'No nights yet.');
+    var cols = [
+      { label: 'Bought', get: function (r) { return day(r.date); } },
+      { label: 'Result', get: function (r) { return txt(r.result) || '—'; } },
+      { label: 'Names', wrap: true, get: function (r) { return Array.isArray(r.names) && r.names.length ? r.names.map(txt).filter(Boolean).join(', ') : '—'; } },
+      { label: 'Return', num: true, get: function (r) { return pct(r.ret); } },
+      { label: 'After fees', num: true, get: function (r) { return pct(r.ret_after_fees); } }
+    ];
+    if (rows.some(function (r) { return num(r.pnl_usd); })) cols.push({ label: 'P&L, $', num: true, get: function (r) { return money(r.pnl_usd, 'USD', 2, true); } });
+    cols.push({ label: 'Note', wrap: true, get: function (r) {
+      var d = txt(r.detail);
+      return [d && d !== txt(r.result) ? d : '', txt(r.note)].filter(Boolean).join(' · ');
+    } });
+    return tableMore(id + '-nights', name4(a) + ' nights', cols, rows, 10, 'All nights');
+  }
+
+  // ---- exposure across accounts
+  function exposureBlock(e) {
+    var sec = h('section', { class: 'exposure', 'aria-labelledby': 'h-exposure' }, h('h3', { id: 'h-exposure' }, 'Exposure across accounts'));
+    sec.appendChild(h('p', { class: 'sub' }, 'FTMO and IG trade the same signal. Notional in dollars.'));
+    if (!isObj(e) || isErr(e)) { sec.appendChild(placeholder(e, 'The exposure')); return sec; }
+    var R = e.rows;
+    if (!Array.isArray(R)) sec.appendChild(placeholder(R, 'The exposure'));
+    else if (!objRows(R).length) sec.appendChild(h('p', { class: 'empty' }, 'No positions in either account.'));
+    else {
+      var rows = objRows(R).slice().sort(function (x, y) {
+        return (num(y.net_usd) ? Math.abs(y.net_usd) : 0) - (num(x.net_usd) ? Math.abs(x.net_usd) : 0);
+      });
+      var g = isObj(e.gross_usd) ? e.gross_usd : {};
+      var gs = isObj(e.gross_share) ? e.gross_share : {};
+      var gsum = num(g.ftmo) && num(g.ig) ? g.ftmo + g.ig : null;
+      var both = function (r) { return num(r.ftmo_usd) && num(r.ig_usd) && r.ftmo_usd !== 0 && r.ig_usd !== 0; };
+      // An account with nothing on in the market: a dash, not "$0" and "0.00%".
+      var held = function (v, f) { return v === 0 ? '—' : f(); };
+      sec.appendChild(table('exposure', 'Exposure by market across FTMO and IG, in dollars', [
+        { label: 'Market', get: marketCell },
+        { label: 'FTMO', num: true, get: function (r) { return held(r.ftmo_usd, function () { return money(r.ftmo_usd, 'USD', 0, true); }); } },
+        { label: 'IG', num: true, get: function (r) { return held(r.ig_usd, function () { return money(r.ig_usd, 'USD', 0, true); }); } },
+        { label: 'Combined', num: true, get: function (r) { return money(num(r.net_usd) ? r.net_usd : num(r.ftmo_usd) && num(r.ig_usd) ? r.ftmo_usd + r.ig_usd : null, 'USD', 0, true); } },
+        { label: 'Same way', get: function (r) { return r.same_way === true ? 'yes' : both(r) ? 'no, opposite' : r.same_way === false ? 'one account' : '—'; } },
+        { label: 'Share of FTMO equity', num: true, get: function (r) { return held(r.ftmo_usd, function () { return share(r.ftmo_share); }); } },
+        { label: 'Share of IG equity', num: true, get: function (r) { return held(r.ig_usd, function () { return share(r.ig_share); }); } }
+      ], rows, isObj(e.gross_usd) ? ['Gross', money(g.ftmo, 'USD', 0), money(g.ig, 'USD', 0), money(gsum, 'USD', 0), '', share(gs.ftmo), share(gs.ig)] : null));
+    }
+    if (txt(e.fx_note)) sec.appendChild(h('p', { class: 'small' }, txt(e.fx_note)));
+    return sec;
+  }
+
+  // ---- health
+  var HSTATE = { ok: ['OK', 's-ok'], warn: ['Warning', 's-warn'], bad: ['Error', 's-bad'] };
+  function healthBlock(hl) {
+    var sec = h('section', { 'aria-labelledby': 'h-health' }, h('h2', { id: 'h-health' }, 'Health'));
+    if (!isObj(hl) || isErr(hl)) { sec.appendChild(placeholder(hl, 'The health list')); return sec; }
+    var items = hl.items;
+    if (!Array.isArray(items)) sec.appendChild(placeholder(items, 'The health list'));
+    else if (!objRows(items).length) sec.appendChild(h('p', { class: 'empty' }, 'No checks reported.'));
+    else {
+      sec.appendChild(h('ul', { class: 'hitems' }, objRows(items).map(function (it) {
+        var st = HSTATE[it.state] || [txt(it.state) || 'Not read', 's-off'];
+        return h('li', { class: 'hitem ' + st[1] },
+          h('span', { class: 'dot', 'aria-hidden': 'true' }),
+          h('span', null, h('span', { class: 'hname' }, txt(it.name) || '—'), h('span', { class: 'hstate' }, st[0])),
+          txt(it.detail) ? h('span', { class: 'hdetail' }, txt(it.detail)) : null);
+      })));
+    }
+    var errs = hl.errors;
+    if (Array.isArray(errs)) {
+      var rows = objRows(errs);
+      if (!rows.length) sec.appendChild(h('p', { class: 'small' }, 'No errors in the last 24 hours.'));
+      else {
+        sec.appendChild(h('details', { 'data-key': 'errors' },
+          h('summary', null, 'Errors in the last 24 hours (' + rows.length + ')'),
+          h('ol', { class: 'errors' }, rows.map(function (r) {
+            return h('li', null,
+              h('span', { class: 'when' }, whenET(r.t, true)),
+              txt(r.level) ? h('span', { class: 'lvl' }, txt(r.level)) : null,
+              txt(r.where) ? h('span', { class: 'where' }, txt(r.where)) : null,
+              h('p', { class: 'msg' }, txt(r.msg) || '—'));
+          }))));
+      }
+    } else if (errs !== undefined) {
+      sec.appendChild(placeholder(errs, 'The error list'));
+    }
+    return sec;
+  }
+
+  // ---- calendar
+  function calendarBlock(cal, sn) {
+    var sec = h('section', { 'aria-labelledby': 'h-cal' }, h('h2', { id: 'h-cal' }, 'Coming up'));
+    if (!Array.isArray(cal)) { sec.appendChild(placeholder(cal, 'The calendar')); return sec; }
+    var rows = objRows(cal).slice().sort(function (x, y) { return (parseT(x.t) || 0) - (parseT(y.t) || 0); });
+    if (!rows.length) { sec.appendChild(h('p', { class: 'empty' }, 'Nothing in the next 7 days.')); return sec; }
+    var accts = isObj(sn.accounts) ? sn.accounts : {};
+    function nameOf(id) { return (isObj(accts[id]) && txt(accts[id].name)) || NAMES[id] || txt(id); }
+    var asof = parseT(sn.asof) != null ? parseT(sn.asof) : Date.now();
+    function running(r) { var t = parseT(r.t), e = parseT(r.end); return t != null && e != null && t <= asof && asof < e; }
+    sec.appendChild(h('p', { class: 'sub' }, 'The next 7 days.'));
+    sec.appendChild(tableMore('calendar', 'Coming up in the next 7 days', [
+      { label: 'When, ET', soft: true, get: function (r) {
+        // Date and time apart, so a narrow column breaks between them and not inside the date.
+        var at = function (iso, pre) { var w = whenET(iso, false, true), k = w.lastIndexOf(' '); return [h('span', { class: 'nw' }, (pre || '') + w.slice(0, k)), ' ', h('span', { class: 'nw' }, w.slice(k + 1))]; };
+        if (running(r)) return ['Now', h('span', { class: 'sub2' }, at(r.end, 'to '))];
+        return parseT(r.t) != null ? at(r.t) : txt(r.et) || '—';
+      } },
+      { label: 'What', wrap: true, get: function (r) {
+        return [txt(r.what) || txt(r.kind) || '—', txt(r.detail) ? h('span', { class: 'sub2' }, txt(r.detail)) : null];
+      } },
+      { label: 'Accounts', soft: true, get: function (r) { return Array.isArray(r.accounts) && r.accounts.length ? r.accounts.map(function (x, i) { return [i ? ', ' : '', h('span', { class: 'nw' }, nameOf(x))]; }) : '—'; } }
+    ], rows, 12, 'All events'));
+    return sec;
+  }
+
+  // ------------------------------------------------------------------ charts
+  function legend(keys) {
+    return h('ul', { class: 'legend', 'aria-hidden': 'true' }, keys.map(function (k) {
+      var sv = s('svg', { width: 18, height: 10, viewBox: '0 0 18 10' });
+      if (k[0] === 'live') sv.appendChild(s('line', { x1: 1, x2: 17, y1: 5, y2: 5, class: 'ln ln-live' }));
+      else if (k[0] === 'bt') sv.appendChild(s('line', { x1: 0, x2: 18, y1: 5, y2: 5, class: 'ln ln-bt' }));
+      else if (k[0] === 'out') sv.appendChild(s('rect', { x: 0, y: 0, width: 18, height: 10, class: 'band-out' }));
+      else if (k[0] === 'in') sv.appendChild(s('rect', { x: 0, y: 0, width: 18, height: 10, class: 'band-in' }));
+      else if (k[0] === 'med') sv.appendChild(s('line', { x1: 1, x2: 17, y1: 5, y2: 5, class: 'median' }));
+      else if (k[0] === 'dot') sv.appendChild(s('circle', { cx: 9, cy: 5, r: 4, class: 'pt-live' }));
+      else if (k[0] === 'open') sv.appendChild(s('circle', { cx: 9, cy: 5, r: 3.5, class: 'pt-open' }));
+      return h('li', null, sv, k[1]);
+    }));
+  }
+  function chart(cls, label, draw) {
+    var el = h('div', { class: 'chart ' + cls, role: 'img', 'aria-label': label });
+    var c = { el: el, draw: draw, w: -1 };
+    el.__chart = c;
+    charts.push(c);
+    return el;
+  }
+  function drawChart(c) {
+    var w = Math.round(c.el.clientWidth);
+    if (!w) return;
+    c.w = w;
+    try { c.draw(c.el, w); } catch (e) {
+      console.error(e);
+      c.el.replaceChildren(h('p', { class: 'err' }, 'This chart could not be drawn.'));
+    }
+  }
+
+  function niceTicks(lo, hi, count) {
+    if (!(hi > lo)) { var pad = Math.abs(lo) * 0.01 || 1; lo -= pad; hi += pad; }
+    var raw = (hi - lo) / count, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
+    var step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+    var t0 = Math.floor(lo / step + 1e-9) * step, t1 = Math.ceil(hi / step - 1e-9) * step;
+    var out = [];
+    for (var v = t0; v <= t1 + step / 2; v += step) out.push(Math.abs(v) < step / 1e6 ? 0 : +v.toPrecision(12));
+    return { lo: t0, hi: t1, step: step, ticks: out };
+  }
+  function moneyTick(step, maxAbs, ccy) {
+    if (maxAbs >= 10000 && step >= 500) {
+      var dp = step >= 1000 ? 0 : 1;
+      return function (v) { return signOf(v, 6, false) + sym(ccy) + digits(v / 1000, dp) + 'K'; };
+    }
+    var d = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+    return function (v) { return money(v, ccy, d); };
+  }
+  function pctTick(step) {
+    var d = step >= 0.01 ? 0 : step >= 0.001 ? 1 : 2;
+    return function (v) { return fnum(v * 100, d, false) + '%'; };
+  }
+  function pathOf(xs, ys) {
+    var d = '', pen = false;
+    for (var i = 0; i < xs.length; i++) {
+      if (ys[i] == null) { pen = false; continue; }
+      d += (pen ? 'L' : 'M') + xs[i].toFixed(1) + ' ' + ys[i].toFixed(1);
+      pen = true;
+    }
+    return d;
+  }
+  function lastIdx(vals) { for (var i = vals.length - 1; i >= 0; i--) if (num(vals[i])) return i; return -1; }
+  function pickLabels(labels, X, maxW) {
+    var n = labels.length, gap = 10, out = [];
+    if (!n) return out;
+    var widest = Math.max.apply(null, labels.map(tw)) + gap;
+    var span = n > 1 ? X(n - 1) - X(0) : 0;
+    var room = n > 1 ? Math.max(1, Math.floor(span / widest)) : 0;
+    var step = n > 1 ? Math.max(1, Math.ceil((n - 1) / room)) : 1;
+    // Where each label really sits: the first starts at its point, the last ends at it, the rest are centred.
+    function extent(i) {
+      var w = tw(labels[i]), x = X(i);
+      if (n > 1 && i === 0) return [x, x + w];
+      if (n > 1 && i === n - 1) return [x - w, x];
+      return [x - w / 2, x + w / 2];
+    }
+    var endL = n > 1 ? extent(n - 1)[0] : Infinity, lastR = -Infinity;
+    for (var i = 0; i < n - 1; i += step) {
+      var e = extent(i);
+      if (e[0] < lastR + gap || e[1] > endL - gap) continue;
+      out.push(i);
+      lastR = e[1];
+    }
+    out.push(n - 1);
+    return out;
+  }
+
+  // Lines over discrete sessions, one y-axis, with a crosshair readout.
+  function drawLines(el, W, o) {
+    var H = o.height, n = o.labels.length, ccy = o.ccy;
+    var all = [];
+    o.series.forEach(function (se) { se.vals.forEach(function (v) { if (num(v)) all.push(v); }); });
+    if (num(o.ref)) all.push(o.ref);
+    if (o.zero) all.push(0);
+    if (!all.length) { el.replaceChildren(h('p', { class: 'empty' }, 'Nothing to draw yet.')); return; }
+    var T = niceTicks(Math.min.apply(null, all), Math.max.apply(null, all), H >= 180 ? 4 : 3);
+    var yfmt = moneyTick(T.step, Math.max(Math.abs(T.lo), Math.abs(T.hi)), ccy);
+    var ylab = T.ticks.map(yfmt);
+    var padL = Math.ceil(Math.max.apply(null, ylab.map(tw))) + 10;
+    var ends = [];
+    o.series.forEach(function (se) {
+      var i = lastIdx(se.vals);
+      if (i >= 0) ends.push({ se: se, i: i, text: (o.series.length > 1 ? se.name + ' ' : '') + money(se.vals[i], ccy, 0, o.series.length > 1) });
+    });
+    // Two or more series on a narrow chart: no end labels (the legend names them, the table gives the values).
+    var showEnds = ends.length === 1 || (ends.length > 1 && W >= 480);
+    var padR = showEnds ? Math.ceil(Math.max.apply(null, ends.map(function (e) { return tw(e.text); }))) + 14 : 8;
+    var padT = 8, padB = 24;
+    var pw = Math.max(40, W - padL - padR), ph = H - padT - padB;
+    var X = function (i) { return padL + (n === 1 ? pw / 2 : i * pw / (n - 1)); };
+    var Y = function (v) { return padT + ph - (v - T.lo) / (T.hi - T.lo) * ph; };
+    var svg = s('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'aria-hidden': 'true' });
+    var grid = s('g', { class: 'grid' });
+    T.ticks.forEach(function (t, k) {
+      grid.appendChild(s('line', { x1: padL, x2: padL + pw, y1: Y(t).toFixed(1), y2: Y(t).toFixed(1), class: t === 0 && o.zero ? 'zero' : null }));
+      grid.appendChild(s('text', { x: padL - 8, y: Y(t).toFixed(1), 'text-anchor': 'end', dy: '0.32em' }, ylab[k]));
+    });
+    svg.appendChild(grid);
+    pickLabels(o.labels, X).forEach(function (i) {
+      var anchor = n > 1 && i === 0 ? 'start' : n > 1 && i === n - 1 ? 'end' : 'middle';
+      svg.appendChild(s('text', { x: X(i).toFixed(1), y: H - 6, 'text-anchor': anchor }, o.labels[i]));
+    });
+    if (num(o.ref)) svg.appendChild(s('line', { x1: padL, x2: padL + pw, y1: Y(o.ref).toFixed(1), y2: Y(o.ref).toFixed(1), class: 'ref' }));
+    var xs = o.labels.map(function (_, i) { return X(i); });
+    o.series.slice().reverse().forEach(function (se) {
+      var ys = se.vals.map(function (v) { return num(v) ? Y(v) : null; });
+      if (se.openLast) {
+        // The last point is now, not a finished session: drawn apart.
+        var li = lastIdx(se.vals), body = ys.slice(0, li), xb = xs.slice(0, li);
+        svg.appendChild(s('path', { d: pathOf(xb, body), class: 'ln ln-' + se.cls }));
+        var pi = lastIdx(body);
+        if (pi >= 0) svg.appendChild(s('path', { d: 'M' + xs[pi].toFixed(1) + ' ' + ys[pi].toFixed(1) + 'L' + xs[li].toFixed(1) + ' ' + ys[li].toFixed(1), class: 'ln ln-' + se.cls, 'stroke-dasharray': '2 3' }));
+        svg.appendChild(s('circle', { cx: xs[li].toFixed(1), cy: ys[li].toFixed(1), r: 4, class: 'pt-open' }));
+      } else {
+        svg.appendChild(s('path', { d: pathOf(xs, ys), class: 'ln ln-' + se.cls }));
+        var k = lastIdx(se.vals);
+        if (k >= 0 && (n <= 2 || ys.filter(function (y) { return y != null; }).length === 1)) {
+          ys.forEach(function (y, i) { if (y != null) svg.appendChild(s('circle', { cx: xs[i].toFixed(1), cy: y.toFixed(1), r: 3.5, class: 'pt-' + se.cls })); });
+        } else if (k >= 0) {
+          svg.appendChild(s('circle', { cx: xs[k].toFixed(1), cy: ys[k].toFixed(1), r: 4, class: 'pt-' + se.cls }));
+        }
+      }
+    });
+    // End labels; two that would touch are pushed apart around their midpoint.
+    if (showEnds) {
+      var placed = ends.map(function (e) { return { e: e, y: Y(e.se.vals[e.i]) }; }).sort(function (a, b) { return a.y - b.y; });
+      if (placed.length === 2 && placed[1].y - placed[0].y < 14) {
+        var mid = (placed[0].y + placed[1].y) / 2;
+        mid = Math.max(padT + 7, Math.min(padT + ph - 7, mid));
+        placed[0].y = mid - 7; placed[1].y = mid + 7;
+      }
+      placed.forEach(function (p) {
+        svg.appendChild(s('text', { x: (X(p.e.i) + 8).toFixed(1), y: p.y.toFixed(1), dy: '0.32em', class: 'end' }, p.e.text));
+      });
+    }
+
+    // Crosshair: the nearest session, every series at it.
+    var cross = s('line', { y1: padT, y2: padT + ph, class: 'cross', visibility: 'hidden' });
+    svg.appendChild(cross);
+    var hit = s('rect', { x: padL - 6, y: 0, width: pw + 12, height: H, class: 'hit' });
+    svg.appendChild(hit);
+    var tip = h('div', { class: 'tip', hidden: true });
+    function showAt(clientX) {
+      var r = svg.getBoundingClientRect();
+      var x = clientX - r.left;
+      var i = n === 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round((x - padL) / (pw / (n - 1)))));
+      cross.setAttribute('x1', X(i).toFixed(1));
+      cross.setAttribute('x2', X(i).toFixed(1));
+      cross.setAttribute('visibility', 'visible');
+      tip.replaceChildren(h('div', { class: 'k' }, (o.tips || o.labels)[i]));
+      o.series.forEach(function (se) {
+        tip.appendChild(h('div', null, h('b', null, money(se.vals[i], ccy, 2, o.series.length > 1)), o.series.length > 1 ? h('span', { class: 'k' }, ' ' + se.name) : null));
+      });
+      tip.hidden = false;
+      var tw0 = tip.offsetWidth, left = X(i) + 12;
+      if (left + tw0 > W) left = X(i) - 12 - tw0;
+      tip.style.transform = 'translate(' + Math.max(0, left).toFixed(0) + 'px, ' + padT + 'px)';
+    }
+    function hide() { cross.setAttribute('visibility', 'hidden'); tip.hidden = true; }
+    hit.addEventListener('pointermove', function (e) { showAt(e.clientX); });
+    hit.addEventListener('pointerdown', function (e) { showAt(e.clientX); });
+    hit.addEventListener('pointerleave', hide);
+    el.replaceChildren(svg, tip);
+  }
+
+  // The backtest's percentile fan by number of sessions, and the live return in it.
+  function drawFan(el, W, f, n, live, nNow, liveNow) {
+    var H = 210, pts = f.pts, last = f.q.length - 1;
+    var want = Math.max(10, 2 * Math.max(n || 0, nNow || 0));
+    var hmax = pts[pts.length - 1].h;
+    for (var i = 0; i < pts.length; i++) if (pts[i].h >= want) { hmax = pts[i].h; break; }
+    var shown = pts.filter(function (p) { return p.h <= hmax; });
+    var vals = [];
+    shown.forEach(function (p) { vals.push(p.r[0], p.r[last]); });
+    var hasLive = n && num(live) && n <= hmax;
+    var hasNow = nNow && num(liveNow) && nNow <= hmax;
+    if (hasLive) vals.push(live);
+    if (hasNow) vals.push(liveNow);
+    var T = niceTicks(Math.min.apply(null, vals), Math.max.apply(null, vals), 4);
+    var yfmt = pctTick(T.step), ylab = T.ticks.map(yfmt);
+    var padL = Math.ceil(Math.max.apply(null, ylab.map(tw))) + 10, padR = 12, padT = 8, padB = 24;
+    var pw = Math.max(40, W - padL - padR), ph = H - padT - padB;
+    var X = function (x) { return padL + x / hmax * pw; };
+    var Y = function (v) { return padT + ph - (v - T.lo) / (T.hi - T.lo) * ph; };
+    var svg = s('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'aria-hidden': 'true' });
+    var grid = s('g', { class: 'grid' });
+    T.ticks.forEach(function (t, k) {
+      grid.appendChild(s('line', { x1: padL, x2: padL + pw, y1: Y(t).toFixed(1), y2: Y(t).toFixed(1), class: t === 0 ? 'zero' : null }));
+      grid.appendChild(s('text', { x: padL - 8, y: Y(t).toFixed(1), 'text-anchor': 'end', dy: '0.32em' }, ylab[k]));
+    });
+    svg.appendChild(grid);
+    function area(a, b, cls) {
+      var d = '';
+      shown.forEach(function (p, k) { d += (k ? 'L' : 'M') + X(p.h).toFixed(1) + ' ' + Y(p.r[b]).toFixed(1); });
+      shown.slice().reverse().forEach(function (p) { d += 'L' + X(p.h).toFixed(1) + ' ' + Y(p.r[a]).toFixed(1); });
+      svg.appendChild(s('path', { d: d + 'Z', class: cls }));
+    }
+    area(0, last, 'band-out');
+    if (f.inner) area(f.inner[0], f.inner[1], 'band-in');
+    if (f.mid != null) {
+      svg.appendChild(s('path', { d: pathOf(shown.map(function (p) { return X(p.h); }), shown.map(function (p) { return Y(p.r[f.mid]); })), class: 'median' }));
+    }
+    // Sessions along the bottom.
+    // The last label ("N sessions") always shows; earlier ones give way to it and to each other.
+    var endP = shown[shown.length - 1], endLab = endP.h + ' sessions', endX = X(endP.h);
+    var endLeft = endX - tw(endLab), lastX = -Infinity;
+    shown.slice(0, -1).forEach(function (p) {
+      var label = String(p.h), w0 = tw(label), x = X(p.h);
+      if (x - w0 / 2 < lastX + 6 || x + w0 / 2 > endLeft - 6) return;
+      svg.appendChild(s('text', { x: x.toFixed(1), y: H - 6, 'text-anchor': 'middle' }, label));
+      lastX = x + w0 / 2;
+    });
+    svg.appendChild(s('text', { x: endX.toFixed(1), y: H - 6, 'text-anchor': 'end' }, endLab));
+    if (hasLive) {
+      var lx = X(n), ly = Y(live);
+      svg.appendChild(s('line', { x1: lx.toFixed(1), x2: lx.toFixed(1), y1: padT, y2: padT + ph, class: 'guide' }));
+      if (hasNow) svg.appendChild(s('path', { d: 'M' + lx.toFixed(1) + ' ' + ly.toFixed(1) + 'L' + X(nNow).toFixed(1) + ' ' + Y(liveNow).toFixed(1), class: 'ln ln-live', 'stroke-dasharray': '2 3', 'stroke-width': 1.5 }));
+      svg.appendChild(s('circle', { cx: lx.toFixed(1), cy: ly.toFixed(1), r: 4.5, class: 'pt-live' }));
+      var lab = 'Live ' + pct(live);
+      var right = lx + 9 + tw(lab) <= padL + pw;
+      // Put the label on the side of the dot away from the in-progress point.
+      var up = !hasNow || Y(liveNow) >= ly;
+      svg.appendChild(s('text', { x: (right ? lx + 9 : lx - 9).toFixed(1), y: (up ? ly - 10 : ly + 14).toFixed(1), 'text-anchor': right ? 'start' : 'end', class: 'end' }, lab));
+    }
+    if (hasNow) svg.appendChild(s('circle', { cx: X(nNow).toFixed(1), cy: Y(liveNow).toFixed(1), r: 4, class: 'pt-open' }));
+    el.replaceChildren(svg);
+  }
+
+  // ------------------------------------------------------------------ start
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (view === 'board') redrawCharts(); });
+  setView('loading');
+  load();
+  setInterval(function () { if (view === 'board') tick(); }, 15000);
+  setInterval(function () {
+    if (document.visibilityState === 'visible' && (view === 'board' || view === 'down')) load();
+  }, 60000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if ((view === 'board' || view === 'down') && Date.now() - lastTry > 55000) load();
+    if (view === 'gate' && gisReady && Date.now() - nonceAt > 9 * 60 * 1000) startSignIn({ prompt: false });
+    if (view === 'board') tick();
+  });
+})();
+</script>
+</body>
+</html>
