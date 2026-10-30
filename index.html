@@ -16,7 +16,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='14' ry='7' fill='none' stroke='%2327303a' stroke-width='1.5'/%3E%3Ccircle cx='24' cy='16' r='2.6' fill='%23b8964f'/%3E%3Ccircle cx='2' cy='16' r='2.4' fill='%23e70775'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -46,7 +46,8 @@
   --orbit: #27303a;
   --line: #b9c1c8;
   --sun: #b8964f;
-  --select: rgba(184, 150, 79, 0.32);
+  --accent: #e70775;
+  --select: rgba(231, 7, 117, 0.2);
   --gutter: clamp(1rem, 4.2vw, 3.5rem);
 }
 @media (prefers-color-scheme: dark) {
@@ -57,7 +58,8 @@
     --orbit: #b3bcc4;
     --line: #38414a;
     --sun: #cdae68;
-    --select: rgba(205, 174, 104, 0.34);
+    --accent: #fc4a93;
+    --select: rgba(252, 74, 147, 0.3);
   }
 }
 * { box-sizing: border-box; }
@@ -80,7 +82,7 @@ body {
   font-size: 18px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  caret-color: var(--sun);
+  caret-color: var(--accent);
 }
 ::selection { background: var(--select); color: var(--ink); }
 a {
@@ -91,8 +93,8 @@ a {
   text-underline-offset: 0.2em;
   transition: text-decoration-color 0.25s ease;
 }
-a:hover { text-decoration-color: currentColor; }
-a:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 2px; }
+a:hover { text-decoration-color: var(--accent); }
+a:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
 
 header {
   position: relative;
@@ -151,8 +153,8 @@ figure { margin: 0; }
 .plate .orbit { fill: none; stroke: var(--orbit); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
 .plate .leader { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .plate .sun { fill: var(--sun); }
-.plate .planet { fill: var(--ink); }
-.plate .trail { fill: none; stroke: var(--ink); stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.plate .planet { fill: var(--accent); }
+.plate .trail { fill: none; stroke: var(--accent); stroke-linecap: round; vector-effect: non-scaling-stroke; }
 
 /* The orbit spans 600 of the figure's 660 units, so each text is inset by
    30/660 of the width to hang from its end. */
@@ -298,6 +300,8 @@ html.sky .close .reach {
   line-height: 1.1;
   letter-spacing: -0.015em;
 }
+html.sky .close .reach a { text-decoration-color: var(--accent); text-decoration-thickness: 0.045em; text-underline-offset: 0.16em; }
+html.sky .close .reach a:hover { text-decoration-thickness: 0.09em; }
 html.sky .close footer { padding: 1.4rem 0 1.75rem; text-align: left; }
 
 /* The copy is faded by the scene as the camera arrives and leaves. */
@@ -743,7 +747,7 @@ async function fly() {
     orbitMat.color.copy(orb);
     tickMat.uniforms.uColor.value.copy(orb);
     apsMat.color.copy(orb);
-    trailMat.uniforms.uColor.value.set(isDark ? '#b9c9d8' : css('--ink'));
+    trailMat.uniforms.uColor.value.set(css('--accent'));
     trailMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
     trailMat.needsUpdate = true;
     theme.trail = isDark ? 0.42 : 0.55;
@@ -755,9 +759,9 @@ async function fly() {
     glowMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
     glowMat.needsUpdate = true;
     theme.glow = isDark ? 1 : 0.62;
-    planetMat.uniforms.uDay.value.set(isDark ? '#e6dccb' : '#f6f1e6');
-    planetMat.uniforms.uNight.value.set(isDark ? '#2a323b' : '#76818c');
-    planetMat.uniforms.uRim.value.set(isDark ? '#7fb2e0' : '#8fb6d8');
+    planetMat.uniforms.uDay.value.set(isDark ? '#ff74ad' : '#ff3b93');
+    planetMat.uniforms.uNight.value.set(isDark ? '#ec3787' : '#d70a6c');
+    planetMat.uniforms.uRim.value.set(isDark ? '#ffb0cf' : '#ff8fbd');
     theme.ticks = isDark ? 0.42 : 0.5;
     theme.aps = isDark ? 0.22 : 0.28;
     theme.orbit = isDark ? 0.62 : 0.75;
